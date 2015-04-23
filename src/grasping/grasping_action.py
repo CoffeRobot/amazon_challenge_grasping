@@ -90,16 +90,19 @@ class BTAction(object):
 
         rospy.loginfo('Executing Grasping')
 
+        status = self.sideGrasping()
 
+
+    def sideGrasping(self):
         while not rospy.is_shutdown():
             try:
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
                 rospy.loginfo('got new object pose')
+                tpRPY = self.RPYFromQuaternion(tp[1])
                 break
             except:
                 pass
 
-        tpRPY = self.RPYFromQuaternion(tp[1])
 
         '''
         PRE-GRASPING
