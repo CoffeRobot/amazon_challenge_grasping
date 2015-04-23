@@ -49,6 +49,8 @@ class BTAction(object):
         self.ft_switch = True
         self.lifting_height = 0.04
         self.retreat_distance = 0.3
+        self.graspingStrategy = 1
+        self.topGraspHeight = 0.1
 
     def flush(self):
         self._item = ""
@@ -71,6 +73,7 @@ class BTAction(object):
         self.pub_pose.publish(robotPose)
         return robotPose
 
+
     def RPYFromQuaternion(self, q):
         return tf.transformations.euler_from_quaternion([q[0], q[1], q[2], q[3]])
 
@@ -90,10 +93,126 @@ class BTAction(object):
 
         rospy.loginfo('Executing Grasping')
 
-        status = self.sideGrasping()
+        if self.graspingStrategy == 0:
+            status = self.sideGrasping()
+        elif self.graspingStrategy == 1:
+            status = self.topGrasping()
+        else:
+            self.flush()
+            rospy.logerr('No strategy found to grasp')
+            self.set_status('FAILURE')
 
+    def topGrasping(self):
+        while not rospy.is_shutdown():
+            try:
+                tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
+                rospy.loginfo('got new object pose')
+                tpRPY = self.RPYFromQuaternion(tp[1])
+                break
+            except:
+                pass
+
+        arm_now = self.get_arm_to_move()
+        if arm_now == 'right_arm':
+            self.open_right_gripper()
+        else:
+            self.open_left_gripper()
+
+        '''
+        PRE-GRASPING
+        '''
+
+        pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( tp[0][0] + self.pre_distance, tp[0][1], tp[0][2] + self.topGraspHeight))
+
+        pr2_moveit_utils.go_tool_frame(self.left_arm, pre_pose, base_frame_id = 'base_link', ft=self.ft_switch, wait=True)
+
+        if arm_now == 'right_arm':
+            try:
+                pr2_moveit_utils.go_tool_frame(self.right_arm, pre_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                               wait=True)
+            except:
+                self.flush()
+                rospy.logerr('exception in PRE-GRASPING')
+                self.set_status('FAILURE')
+                return
+        else:
+            try:
+                pr2_moveit_utils.go_tool_frame(self.left_arm, pre_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                               wait=True)
+            except:
+                self.flush()
+                rospy.logerr('exception in PRE-GRASPING')
+                self.set_status('FAILURE')
+                return
+
+
+        '''
+        REACHING
+        '''
+
+        reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( tp[0][0], tp[0][1], tp[0][2] + self.topGraspHeight))
+
+        if arm_now == 'right_arm':
+            try:
+                pr2_moveit_utils.go_tool_frame(self.right_arm, reaching_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                               wait=True)
+            except:
+                self.flush()
+                rospy.logerr('exception in REACHING')
+                self.set_status('FAILURE')
+                return
+        else:
+            try:
+                pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                               wait=True)
+            except:
+                self.flush()
+                rospy.logerr('exception in REACHING')
+                self.set_status('FAILURE')
+                return
+
+        '''
+        TOUCHING
+        '''
+
+        touching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( tp[0][0], tp[0][1], tp[0][2] + 0.02))
+
+        if arm_now == 'right_arm':
+            try:
+                pr2_moveit_utils.go_tool_frame(self.right_arm, touching_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                               wait=True)
+            except:
+                self.flush()
+                rospy.logerr('exception in REACHING')
+                self.set_status('FAILURE')
+                return
+        else:
+            try:
+                pr2_moveit_utils.go_tool_frame(self.left_arm, touching_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                               wait=True)
+            except:
+                self.flush()
+                rospy.logerr('exception in REACHING')
+                self.set_status('FAILURE')
+                return
+
+        '''
+        GRASPING
+        '''
+        if arm_now == 'right_arm':
+            self.close_right_gripper()
+        else:
+            self.close_left_gripper()
+
+
+
+        self.pub_grasped.publish("SUCCESS")
+        self.set_status('SUCCESS')
+        self.pub_rate.sleep()
+        return
 
     def sideGrasping(self):
+
         while not rospy.is_shutdown():
             try:
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
@@ -118,9 +237,6 @@ class BTAction(object):
 
         pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( self.pre_distance, 0, 0))
         pre_pose_robot = self.transformPoseToRobotFrame(pre_pose, planner_frame)
-
-
-
 
         if arm_now == 'right_arm':
             try:
