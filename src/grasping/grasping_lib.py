@@ -63,7 +63,6 @@ def getGraspFrame(listener, shelf_bin, object_name):
 		except:
 			pass
 
-	# approchVec, approchDir = getApprochVec(bin_frame, obj_frame)
 	approchVec, approchDir, graspingVec, graspingDir = getGraspingAxis(bin_frame, obj_frame)
 
 	F_bin_frame = posemath.fromTf(bin_frame)
@@ -77,7 +76,7 @@ def getGraspFrame(listener, shelf_bin, object_name):
 	objAxes = [objRed, objGreen, objBlue]
 
 	x = [a*approchDir for a in objAxes[approchVec]]
-	z = [g*graspingDir for g in objAxes[graspingVec]]
+	z = [g*(-graspingDir) for g in objAxes[graspingVec]]
 
 	y = numpy.cross(z, x)
 	

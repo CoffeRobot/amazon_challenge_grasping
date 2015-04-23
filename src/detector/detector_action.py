@@ -7,7 +7,7 @@ import actionlib
 
 import amazon_challenge_bt_actions.msg
 
-import grasping_lib
+import grasping.grasping_lib as grasping_lib
 
 
 from std_msgs.msg import String
@@ -87,6 +87,7 @@ class superDetector(object):
 
         self.obsAccumulation = []
         enough = False
+        good = False
         for i in range(self.trials):
             while not rospy.is_shutdown():
                 rospy.sleep(0.01)
@@ -120,6 +121,9 @@ class superDetector(object):
 
 
     def validate(self):
+        if len(self.obsAccumulation) < self.obsN:
+            return False
+        
         Xs = [t[0] for t in self.obsAccumulation]
         Ys = [t[1] for t in self.obsAccumulation]
         Zs = [t[2] for t in self.obsAccumulation]
