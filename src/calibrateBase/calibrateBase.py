@@ -18,8 +18,8 @@ bm = baseMove(verbose=True)
 
 bm.setPosTolerance(0.02)
 bm.setAngTolerance(0.006)
-bm.setLinearGain(100)
-bm.setAngularGain(100)
+bm.setLinearGain(1)
+bm.setAngularGain(1)
 
 
 

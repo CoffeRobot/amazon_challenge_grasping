@@ -13,7 +13,7 @@ from collections import namedtuple
 
 # P control is sufficient for this function
 
-twistBound = namedtuple('twistBound', ['upper', 'lower'])
+twistBound = namedtuple('twistBound', ['lower', 'upper'])
 
 class baseMove:
 	def __init__(self, verbose=False):
@@ -26,7 +26,7 @@ class baseMove:
 		self.angularGain = 10
 		self.comm = rospy.Rate(100)
 		self.linearTwistBound = twistBound(0.06, 0.14)
-		self.angularTwistBound = twistBound(0.06,0.4)
+		self.angularTwistBound = twistBound(0.06, 0.2)
 		self.refFrame = '/shelf_frame'
 
 	def setPosTolerance(self, t):
@@ -88,10 +88,14 @@ class baseMove:
 				z_diff = (angle - theta)
 				s.angular.z = z_diff * self.angularGain
 
-				if abs(s.angular.z) > self.angularTwistBound.upper:
+				print s.angular.z
+
+				if abs(s.angular.z) >= self.angularTwistBound.upper:
 					s.angular.z = self.angularTwistBound.upper * (s.angular.z)/abs(s.angular.z)
 				elif abs(s.angular.z) < self.angularTwistBound.lower:
 					s.angular.z = self.angularTwistBound.lower * (s.angular.z)/abs(s.angular.z)
+
+				print s.angular.z
 				
 				self.base_pub.publish(s)
 				if abs(z_diff) < self.angTolerance:
