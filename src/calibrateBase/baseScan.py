@@ -35,6 +35,7 @@ class baseScan:
 		self.odomR = []
 		self.priorAvailable = False
 		self.newObsWeight = 0.1
+		self.offsetXY = [-0.044, 0]
 
 
 
@@ -103,8 +104,8 @@ class baseScan:
 					radius2.append(math.sqrt(x2[i]**2 + y2[i]**2))
 			n2 = radius2.index(min(radius2))
 
-			leg1 = [x[n], y[n]]
-			leg2 = [x2[n2], y2[n2]]
+			leg1 = [x[n] + self.offsetXY[0], y[n] + self.offsetXY[1]]
+			leg2 = [x2[n2] + self.offsetXY[0], y2[n2] + self.offsetXY[1]]
 		return [leg1, leg2] # left, right
 
 	def findLegs(self):
