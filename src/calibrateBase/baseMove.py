@@ -41,7 +41,7 @@ class baseMove:
 	def setAngularGain(self, g):
 		self.angularGain = g
 
-	def goPosition(self, position, wait=True): # translation only
+	def goPosition(self, position, wait=True):
 		s = Twist()
 		while True:
 			try:
@@ -72,18 +72,16 @@ class baseMove:
 						print 'position arrived'
 					return True
 
-                if not wait:
-                    return False
+				if not wait:
+					return False
 
-			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                if wait:
-                    self.comm.sleep()
-
-                else:
-                    return False
+			except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+				if wait:
+					self.comm.sleep()
+				else:
+					return False
 
 	def goAngle(self, angle, wait=True):
-
 		s = Twist()
 		while True:
 			try:
@@ -111,16 +109,15 @@ class baseMove:
 						print 'angle arrived'
 					return True
 
-                if not wait:
-                    return False
+				if not wait:
+					return False
 
 			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                if wait:
-                    self.comm.sleep()
+				if wait:
+					self.comm.sleep()
 
-                else:
-                    return False
-
+				else:
+					return False
 
 	'''
 	The go() method is not stable in practice use to constant rotation of wheels, DO NOT use it.
@@ -164,13 +161,12 @@ class baseMove:
 					if self.verbose:
 						print 'position and angle arrived'
 					return True
-
-                if not wait:
-                    return False
+				if not wait:
+					return False
 
 			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                if wait:
-                    self.comm.sleep()
+				if wait:
+					self.comm.sleep()
 
-                else:
-                    return False
+				else:
+					return False
