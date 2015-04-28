@@ -44,7 +44,7 @@ class baseScan:
 
 	def refreshRangeData(self):
 		self.rangeData = LaserScan() # flush
-		while len(self.rangeData.ranges) == 0:
+		while len(self.rangeData.ranges) == 0 and not rospy.is_shutdown():
 			rospy.sleep(0.04)
 
 	def getStatus(self):
@@ -57,7 +57,7 @@ class baseScan:
 
 		xyz = pc2.read_points(cloud2, skip_nans=True, field_names=("x", "y", "z"))
 		self.pc = []
-		while True:
+		while not rospy.is_shutdown():
 			try:
 				self.pc.append(xyz.next())
 			except:
@@ -104,8 +104,10 @@ class baseScan:
 					radius2.append(math.sqrt(x2[i]**2 + y2[i]**2))
 			n2 = radius2.index(min(radius2))
 
-			leg1 = [x[n] + self.offsetXY[0], y[n] + self.offsetXY[1]]
-			leg2 = [x2[n2] + self.offsetXY[0], y2[n2] + self.offsetXY[1]]
+			leg1 = [x[n], y[n]]
+			leg2 = [x2[n2], y2[n2]]
+		leg1 = [leg1[0] + self.offsetXY[0], leg1[1] + self.offsetXY[1]]
+		leg2 = [leg2[0] + self.offsetXY[0], leg2[1] + self.offsetXY[1]]
 		return [leg1, leg2] # left, right
 
 	def findLegs(self):
@@ -216,7 +218,7 @@ class baseScan:
 					self.priorLeft = legs[0]
 					self.priorRight = legs[1]
 					self.rate = rospy.Rate(100)
-					while True:
+					while not rospy.is_shutdown():
 						try:
 							self.odomL, odomRL = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
 							self.odomR, odomRR = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
