@@ -317,14 +317,14 @@ class baseScan:
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] + 0.105, 0.51),
+					self.br.sendTransform((0, shelfOri[1] + 0.1515, 0.51),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_J",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.205, 0.51),
+					self.br.sendTransform((0, shelfOri[1] - 0.1515, 0.51),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_K",     # child
