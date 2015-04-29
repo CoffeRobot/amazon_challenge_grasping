@@ -41,7 +41,7 @@ class baseMove:
 	def setAngularGain(self, g):
 		self.angularGain = g
 
-	def goPosition(self, position): # translation only
+	def goPosition(self, position, wait=True):
 		s = Twist()
 		while True:
 			try:
@@ -71,17 +71,23 @@ class baseMove:
 					if self.verbose:
 						print 'position arrived'
 					return True
-			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-				self.comm.sleep()
 
-	def goAngle(self, angle):
+				if not wait:
+					return False
 
+			except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+				if wait:
+					self.comm.sleep()
+				else:
+					return False
+
+	def goAngle(self, angle, wait=True):
 		s = Twist()
 		while True:
 			try:
 				(trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
 				theta = tf.transformations.euler_from_quaternion(rot)[2]
-				
+
 
 				if self.verbose:
 					print 'theta: %4f, angle: %4f' % (theta, angle)
@@ -96,21 +102,27 @@ class baseMove:
 					s.angular.z = self.angularTwistBound.lower * (s.angular.z)/abs(s.angular.z)
 
 				print s.angular.z
-				
+
 				self.base_pub.publish(s)
 				if abs(z_diff) < self.angTolerance:
 					if self.verbose:
 						print 'angle arrived'
 					return True
-			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-				rospy.sleep(0.1)
-			self.comm.sleep()
 
+				if not wait:
+					return False
+
+			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+				if wait:
+					self.comm.sleep()
+
+				else:
+					return False
 
 	'''
 	The go() method is not stable in practice use to constant rotation of wheels, DO NOT use it.
 	'''
-	def go(self, position, angle):
+	def go(self, position, angle, wait=True):
 		s = Twist()
 		while True:
 			try:
@@ -149,5 +161,12 @@ class baseMove:
 					if self.verbose:
 						print 'position and angle arrived'
 					return True
+				if not wait:
+					return False
+
 			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-				self.comm.sleep()
+				if wait:
+					self.comm.sleep()
+
+				else:
+					return False
