@@ -36,6 +36,7 @@ class baseScan:
 		self.priorAvailable = False
 		self.newObsWeight = 0.1
 		self.offsetXY = [-0.044, 0]
+		self.binOffset = 0.02
 
 
 
@@ -254,84 +255,84 @@ class baseScan:
 			                         "/right_leg",   \
 			                         "/base_laser_link")
 
-					self.br.sendTransform((0, shelfOri[1] + 0.1515, 1.21),
+					self.br.sendTransform((0, shelfOri[1] + 0.1515 + self.binOffset, 1.21),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_A",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.1515, 1.21),
+					self.br.sendTransform((0, shelfOri[1] - 0.1515 + self.binOffset, 1.21),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_B",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.4303, 1.21),
+					self.br.sendTransform((0, shelfOri[1] - 0.4303 + self.binOffset, 1.21),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_C",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] + 0.1515, 1),
+					self.br.sendTransform((0, shelfOri[1] + 0.1515 + self.binOffset, 1),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_D",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.1515, 1),
+					self.br.sendTransform((0, shelfOri[1] - 0.1515 + self.binOffset, 1),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_E",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.4303, 1),
+					self.br.sendTransform((0, shelfOri[1] - 0.4303 + self.binOffset, 1),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_F",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] + 0.1515, 0.78),
+					self.br.sendTransform((0, shelfOri[1] + 0.1515 + self.binOffset, 0.78),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_G",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.1515, 0.78),
+					self.br.sendTransform((0, shelfOri[1] - 0.1515 + self.binOffset, 0.78),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_H",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.4303, 0.78),
+					self.br.sendTransform((0, shelfOri[1] - 0.4303 + self.binOffset, 0.78),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_I",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] + 0.1515, 0.51),
+					self.br.sendTransform((0, shelfOri[1] + 0.1515 + self.binOffset, 0.51),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_J",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.1515, 0.51),
+					self.br.sendTransform((0, shelfOri[1] - 0.1515 + self.binOffset, 0.51),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_K",     # child
 				                     "/shelf_frame"      # parent
 				                     )
 
-					self.br.sendTransform((0, shelfOri[1] - 0.4303, 0.51),
+					self.br.sendTransform((0, shelfOri[1] - 0.4303 + self.binOffset, 0.51),
 				                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
 				                     rospy.Time.now(),
 				                     "/shelf_bin_L",     # child
