@@ -94,14 +94,14 @@ class baseMove:
 				z_diff = (angle - theta)
 				s.angular.z = z_diff * self.angularGain
 
-				print s.angular.z
+				# print s.angular.z
 
 				if abs(s.angular.z) >= self.angularTwistBound.upper:
 					s.angular.z = self.angularTwistBound.upper * (s.angular.z)/abs(s.angular.z)
 				elif abs(s.angular.z) < self.angularTwistBound.lower:
 					s.angular.z = self.angularTwistBound.lower * (s.angular.z)/abs(s.angular.z)
 
-				print s.angular.z
+				# print s.angular.z
 
 				self.base_pub.publish(s)
 				if abs(z_diff) < self.angTolerance:
