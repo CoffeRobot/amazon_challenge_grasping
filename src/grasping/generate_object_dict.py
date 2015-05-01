@@ -46,6 +46,11 @@ class objDict:
         cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, 0)
         self.dict['cheezit_big_original'] = cheezit_big_original
 
+        invalidApproachAxis = [2]
+        invalidGraspAxis = [2]
+        crayola_64_ct = objAttr('crayola_64_ct', invalidApproachAxis, invalidGraspAxis, 0)
+        self.dict['crayola_64_ct'] = crayola_64_ct
+
     def saveDict(self):
 
         with open(self.fileName, 'wb') as handle:
@@ -57,7 +62,7 @@ class objDict:
             self.loaded = pickle.load(handle)
 
     def getEntry(self, name):
-        
+
         name = name.strip('/')
 
         if not self.loaded:

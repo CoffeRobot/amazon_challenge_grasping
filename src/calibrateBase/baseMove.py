@@ -67,7 +67,7 @@ class baseMove:
                     (trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
                 elif self.source == 1:
 
-                    if (rospy.Time.now() - self.walltime).to_sec() > 0.01:
+                    if (rospy.Time.now() - self.walltime).to_sec() > 0.06:
                         self.move = False
 
                     if self.move:
@@ -125,7 +125,7 @@ class baseMove:
                     (trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
                 elif self.source == 1:
 
-                    if (rospy.Time.now() - self.walltime).to_sec() > 0.01:
+                    if (rospy.Time.now() - self.walltime).to_sec() > 0.06:
                         self.move = False
 
 
@@ -133,10 +133,12 @@ class baseMove:
                         trans = self.trans
                         rot = self.pose
                     else:
-                        rospy.logwarn('[baseMove]: pose msg not ready')
+                        if self.verbose:
+                            rospy.logwarn('[baseMove]: pose msg not ready')
                         continue
                 else:
-                    rospy.logwarn('[baseMove]: pose source not known')
+                    if self.verbose:
+                        rospy.logwarn('[baseMove]: pose source not known')
                 theta = tf.transformations.euler_from_quaternion(rot)[2]
 
 

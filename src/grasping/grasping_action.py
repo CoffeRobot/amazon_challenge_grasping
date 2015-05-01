@@ -13,7 +13,7 @@ import sys
 import tf
 import PyKDL as kdl
 import pr2_moveit_utils.pr2_moveit_utils as pr2_moveit_utils
-from pr2_controllers_msgs.msg import Pr2GripperCommandActionGoal
+from pr2_controllers_msgs.msg import Pr2GripperCommand
 from geometry_msgs.msg import Pose, PoseStamped
 from tf_conversions import posemath
 import math
@@ -44,11 +44,11 @@ class BTAction(object):
         rospy.Subscriber("/amazon_next_task", String, self.get_task)
         self._item = ""
         self._bin = ""
-        self.l_gripper_pub = rospy.Publisher('/l_gripper_controller/gripper_action/goal', Pr2GripperCommandActionGoal)
-        self.r_gripper_pub = rospy.Publisher('/r_gripper_controller/gripper_action/goal', Pr2GripperCommandActionGoal)
+        self.l_gripper_pub = rospy.Publisher('/l_gripper_controller/command', Pr2GripperCommand)
+        self.r_gripper_pub = rospy.Publisher('/r_gripper_controller/command', Pr2GripperCommand)
         self.pre_distance = -0.14
         self.ft_switch = True
-        self.lifting_height = 0.02
+        self.lifting_height = 0.01
         self.retreat_distance = 0.3
         self.graspingStrategy = 0 # 0 for sideGrasping and 1 for topGrasping
         self.topGraspHeight = 0.1
@@ -442,17 +442,17 @@ class BTAction(object):
     def go_left_gripper(self, position, max_effort):
         """Move left gripper to position with max_effort
         """
-        ope = Pr2GripperCommandActionGoal()
-        ope.goal.command.position = position
-        ope.goal.command.max_effort = max_effort
+        ope = Pr2GripperCommand()
+        ope.position = position
+        ope.max_effort = max_effort
         self.l_gripper_pub.publish(ope)
 
     def go_right_gripper(self, position, max_effort):
         """Move right gripper to position with max_effort
         """
-        ope = Pr2GripperCommandActionGoal()
-        ope.goal.command.position = position
-        ope.goal.command.max_effort = max_effort
+        ope = Pr2GripperCommand()
+        ope.position = position
+        ope.max_effort = max_effort
         self.r_gripper_pub.publish(ope)
 
     def close_left_gripper(self):

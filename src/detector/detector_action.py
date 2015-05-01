@@ -20,13 +20,13 @@ from grasping.myTypes import *
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
-    _feedback = amazon_challenge_bt_actions.msg.DetectorFeedback()
-    _result   = amazon_challenge_bt_actions.msg.DetectorResult()
+    _feedback = amazon_challenge_bt_actions.msg.BTFeedback()
+    _result = amazon_challenge_bt_actions.msg.BTResult()
 
     def __init__(self, name):
         self._action_name = name
         rospy.init_node(self._action_name)
-        self._as = actionlib.SimpleActionServer(self._action_name, amazon_challenge_bt_actions.msg.DetectorAction,\
+        self._as = actionlib.SimpleActionServer(self._action_name, amazon_challenge_bt_actions.msg.BTAction,\
             execute_cb=self.receive_update, auto_start = False)
 
         self._as.start()
@@ -106,16 +106,18 @@ class superDetector(object):
             if enough:
                 break
 
+        rospy.loginfo('validation')
         good = self.validate()
 
         if not enough or not good:
-            self._feedback.status = 1 # 0 means ok or 1 means failure
-            self._result.status = self._feedback.status
-            self._as.set_succeeded(self._result)
+            rospy.loginfo('not enough or not good')
+            self.set_status('FAILURE')
+
+
         else:
-            self._feedback.status = 0 # 0 means ok or 1 means failure
-            self._result.status = self._feedback.status
-            self._as.set_succeeded(self._result)
+            rospy.loginfo('enough and good')
+            self.set_status('SUCCESS')
+
 
         self.updating = False
         self.lock.release()
@@ -138,6 +140,21 @@ class superDetector(object):
             return False
         else:
             return True
+
+
+    def set_status(self, status):
+        if status == 'SUCCESS':
+            self._feedback.status = 1
+            self._result.status = self._feedback.status
+            rospy.loginfo('Action %s: Succeeded' % self._action_name)
+            self._as.set_succeeded(self._result)
+        elif status == 'FAILURE':
+            self._feedback.status = 2
+            self._result.status = self._feedback.status
+            rospy.loginfo('Action %s: Failed' % self._action_name)
+            self._as.set_succeeded(self._result)
+        else:
+            rospy.logerr('Action %s: has a wrong return status' % self._action_name)
 
     def variance(self, l):
         lMean = sum(l) / len(l)
