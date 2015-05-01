@@ -15,6 +15,7 @@ import sys
 
 import tf
 import threading
+from grasping.myTypes import *
 
 
 class superDetector(object):
@@ -92,6 +93,7 @@ class superDetector(object):
             while not rospy.is_shutdown():
                 rospy.sleep(0.01)
                 try:
+                    rospy.loginfo('try to update object pose')
                     self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item)
                     # self.tp = self.listener.lookupTransform('/base_link', '/' + self._item, rospy.Time(0))
                     rospy.loginfo('object pose UPDATED')

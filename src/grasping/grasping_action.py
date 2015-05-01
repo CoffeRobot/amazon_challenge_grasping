@@ -48,11 +48,13 @@ class BTAction(object):
         self.r_gripper_pub = rospy.Publisher('/r_gripper_controller/gripper_action/goal', Pr2GripperCommandActionGoal)
         self.pre_distance = -0.14
         self.ft_switch = True
-        self.lifting_height = 0.04
+        self.lifting_height = 0.02
         self.retreat_distance = 0.3
-        self.graspingStrategy = 1 # 0 for sideGrasping and 1 for topGrasping
+        self.graspingStrategy = 0 # 0 for sideGrasping and 1 for topGrasping
         self.topGraspHeight = 0.1
         self.topGraspingFrame = 'base_link'
+
+        self._tool_size = rospy.get_param('/tool_size', [0.16, 0.02, 0.04])
 
     def flush(self):
         self._item = ""
@@ -142,7 +144,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, pre_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in PRE-GRASPING')
@@ -168,7 +170,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in REACHING')
@@ -193,7 +195,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, touching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in REACHING')
@@ -213,7 +215,7 @@ class BTAction(object):
         '''
 
         lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1], tp[0][2] + self.topGraspHeight))
-
+        
 
         if arm_now == 'right_arm':
             try:
@@ -227,7 +229,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, lifting_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in PRE-GRASPING')
@@ -252,7 +254,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, retreating_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in PRE-GRASPING')
@@ -305,7 +307,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, pre_pose_robot.pose, base_frame_id = pre_pose_robot.header.frame_id, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.set_status('FAILURE')
                 rospy.logerr('exception in PRE-GRASPING')
@@ -330,7 +332,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose_robot.pose, base_frame_id = reaching_pose_robot.header.frame_id, ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in REACHING')
@@ -365,7 +367,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, lifting_pose, base_frame_id = 'base_link', ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in LIFTING')
@@ -390,7 +392,7 @@ class BTAction(object):
         else:
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, retreating_pose, base_frame_id = 'base_link', ft=self.ft_switch,
-                                               wait=True)
+                                               wait=True, tool_x_offset=self._tool_size[0])
             except:
                 self.flush()
                 rospy.logerr('exception in RETREATING')
