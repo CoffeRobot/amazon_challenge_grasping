@@ -8,6 +8,7 @@ from numpy import linalg as LA
 from math import *
 from collections import namedtuple
 from geometry_msgs.msg import PoseStamped
+import time
 
 # assuming there is already a ros node, do not init one here
 
@@ -24,7 +25,7 @@ class baseMove:
         self.angTolerance = 1
         self.linearGain = 10
         self.angularGain = 10
-        self.comm = rospy.Rate(100)
+        self.comm = rospy.Rate(20)
         self.linearTwistBound = twistBound(0.06, 0.14)
         self.angularTwistBound = twistBound(0.06, 0.2)
         self.refFrame = '/shelf_frame'
@@ -32,6 +33,7 @@ class baseMove:
         self.trans = (0,0,0)
         self.pose = (0,0,0,0)
         self.move = False
+        self.walltime = rospy.Time.now()
 
         self.source = 1 # 0 for tf tree and 1 for pubShelfSep
 
@@ -52,6 +54,7 @@ class baseMove:
     def updateShelfPose(self, msg):
         self.trans = (-msg.pose.position.x - 0.275, -msg.pose.position.y, -msg.pose.position.z - 0.252) # from base_laser_link to base_link
         self.pose = (msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, -msg.pose.orientation.w)
+        self.walltime = msg.header.stamp
         self.move = True
 
 
@@ -63,14 +66,21 @@ class baseMove:
                 if self.source == 0:
                     (trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
                 elif self.source == 1:
+
+                    if (rospy.Time.now() - self.walltime).to_sec() > 0.01:
+                        self.move = False
+
                     if self.move:
                         trans = self.trans
                         rot = self.pose
                     else:
-                        rospy.logwarn('[baseMove]: pose msg not ready')
+                        if self.verbose:
+                            rospy.logwarn('[baseMove]: pose msg not ready')
                         continue
                 else:
-                    rospy.logwarn('[baseMove]: pose source not known')
+                    if self.verbose:
+                        rospy.logwarn('[baseMove]: pose source not known')
+                    pass
 
                 theta = tf.transformations.euler_from_quaternion(rot)[2]
                 x_diff = (position[0] - trans[0])
@@ -114,6 +124,11 @@ class baseMove:
                 if self.source == 0:
                     (trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
                 elif self.source == 1:
+
+                    if (rospy.Time.now() - self.walltime).to_sec() > 0.01:
+                        self.move = False
+
+
                     if self.move:
                         trans = self.trans
                         rot = self.pose
