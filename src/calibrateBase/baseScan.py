@@ -219,8 +219,20 @@ class baseScan:
                     
             if self.reCalibration and math.sqrt((newOri[0]-self.priorOri[0]) **2 + (newOri[1]-self.priorOri[1]) **2) < 0.1:
                 print 'reCalibrated!'
-                self.calibrated = True
-                self.reCalibration = False
+                while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
+                    try:
+                        newOri, newRot = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
+                        newL, newRL = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
+                        newR, newRR = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
+                        self.odomL = newL
+                        self.odomR = newR
+                        self.priorOri = newOri
+                        self.priorRot = newRot
+                        self.calibrated = True
+                        self.reCalibration = False
+                        break
+                    except:
+                        continue
 
             if not self.calibrated and ask:
                 answer = raw_input("Is the current shelf pose estimation good? (y/n)")

@@ -110,12 +110,12 @@ class superDetector(object):
         good = self.validate()
 
         if not enough or not good:
-            rospy.loginfo('not enough or not good')
+            # rospy.loginfo('not enough or not good')
             self.set_status('FAILURE')
 
 
         else:
-            rospy.loginfo('enough and good')
+            # rospy.loginfo('enough and good')
             self.set_status('SUCCESS')
 
 

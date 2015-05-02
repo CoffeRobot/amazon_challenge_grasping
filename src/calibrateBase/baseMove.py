@@ -67,7 +67,7 @@ class baseMove:
                     (trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
                 elif self.source == 1:
 
-                    if (rospy.Time.now() - self.walltime).to_sec() > 0.06:
+                    if (rospy.Time.now() - self.walltime).to_sec() > 0.4:
                         self.move = False
 
                     if self.move:
@@ -125,7 +125,7 @@ class baseMove:
                     (trans,rot) = self.listener.lookupTransform(self.refFrame, "/base_link", rospy.Time(0))
                 elif self.source == 1:
 
-                    if (rospy.Time.now() - self.walltime).to_sec() > 0.06:
+                    if (rospy.Time.now() - self.walltime).to_sec() > 0.4:
                         self.move = False
 
 
