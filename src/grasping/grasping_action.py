@@ -288,6 +288,9 @@ class BTAction(object):
             try:
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
                 binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector", rospy.Time(0))
+                liftShift = 0.15 - binFrame[0][1]
+                rospy.logerr('liftShift')
+                rospy.logerr(liftShift)
                 rospy.loginfo('got new object pose')
                 tpRPY = self.RPYFromQuaternion(tp[1])
                 objBinRPY = self.RPYFromQuaternion(binFrame[1])
@@ -377,13 +380,13 @@ class BTAction(object):
                 self.close_right_gripper()
             else:
                 self.close_left_gripper()
-
             '''
             LIFTING
             '''
+
             rospy.loginfo('LIFTING')
 
-            lifting_pose = kdl.Frame(kdl.Rotation.RPY(tpRPY[0], tpRPY[1], 0), kdl.Vector( tp[0][0], tp[0][1], tp[0][2] + self.lifting_height))
+            lifting_pose = kdl.Frame(kdl.Rotation.RPY(tpRPY[0], tpRPY[1], 0), kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.lifting_height))
 
             if arm_now == 'right_arm':
                 try:
