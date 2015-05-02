@@ -259,7 +259,7 @@ class baseScan:
 
             # check in the odometry frame
             if self.calibrated:
-                if math.sqrt((newOri[0]-self.priorOri[0]) **2 + (newOri[1]-self.priorOri[1]) **2) > 0.1:
+                if math.sqrt((newOri[0]-self.priorOri[0]) **2 + (newOri[1]-self.priorOri[1]) **2) > 0.16:
                     print colored('something is wrong with shelf pose estimation!!!!!!!!!! RECALIBRATING', 'red', attrs=['blink'])
                     self.calibrated = False
                     self.reCalibration = True
