@@ -31,7 +31,7 @@ class baseScan:
         self.leg1 = []
         self.leg2 = []
         self.br = tf.TransformBroadcaster()
-        self.rate = rospy.Rate(60.0)
+        self.rate = rospy.Rate(100.0)
         self.calibrated = False
         self.reCalibration = False
         self.priorOri_in_base_laser_link = [] # in base_laser_link frame
@@ -45,7 +45,7 @@ class baseScan:
         self.binOffset = 0.02
         self.pubShelfSep = rospy.Publisher('pubShelfSep', PoseStamped)
         self.tolerance = 0.1
-        self.updateRounds = 10
+        self.updateRounds = 30
 
 
     def raw_input_with_timeout(prompt, timeout=1.0):
@@ -193,6 +193,8 @@ class baseScan:
             shelfOri, shelfRot = self.getShelfFrame()
             legs = self.findLegs()
             
+            if self.reCalibration:
+                u = 0
 
             if not self.calibrated:
                 try:
@@ -219,18 +221,7 @@ class baseScan:
                 except:
                     continue
 
-            if self.calibrated and u == self.updateRounds:
-                u = 0
-                while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
-                    try:
-                        self.priorOri_in_odom, self.priorRot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
-                        self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
-                        self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
-                        rospy.loginfo("Prior origin in /odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
-                        break
-                    except:
-                        continue
-
+            
                 
             
             if self.priorAvailable:
@@ -244,7 +235,7 @@ class baseScan:
                 try:
                     shelf_in_odom, shelf_rot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
                 except Exception, e:
-                    print e
+                    # print e
                     continue
                     
             if self.reCalibration and math.sqrt((shelf_in_odom[0]-self.priorOri_in_odom[0]) **2 + (shelf_in_odom[1]-self.priorOri_in_odom[1]) **2) <= self.tolerance:
@@ -407,6 +398,19 @@ class baseScan:
                                      )
 
                     self.pubShelfSep.publish(self.tf2PoseStamped(shelfOri, tf.transformations.quaternion_from_euler(0, 0, shelfRot)))
+
+                    if self.calibrated and u == self.updateRounds:
+                        u = 0
+                        while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
+                            try:
+                                self.priorOri_in_odom, self.priorRot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
+                                self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
+                                self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
+                                rospy.loginfo("Prior origin in /odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
+                                break
+                            except:
+                                continue
+
 
 
 
