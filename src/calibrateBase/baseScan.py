@@ -178,26 +178,29 @@ class baseScan:
             
 
             if not self.calibrated:
-                self.br.sendTransform((shelfOri[0], shelfOri[1], 0),
-                                 tf.transformations.quaternion_from_euler(0, 0, shelfRot),
-                                 rospy.Time.now(),
-                                 "/shelf_frame",     # child
-                                 "/base_laser_link"      # parent
-                                 )
+                try:
+                    self.br.sendTransform((shelfOri[0], shelfOri[1], 0),
+                                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
+                                     rospy.Time.now(),
+                                     "/shelf_frame",     # child
+                                     "/base_laser_link"      # parent
+                                     )
 
-                self.br.sendTransform((legs[0][0], legs[0][1], 0), \
-                                 tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
-                                 rospy.Time.now(),\
-                                 "/left_leg",   \
-                                 "/base_laser_link")
+                    self.br.sendTransform((legs[0][0], legs[0][1], 0), \
+                                     tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
+                                     rospy.Time.now(),\
+                                     "/left_leg",   \
+                                     "/base_laser_link")
 
-                self.br.sendTransform((legs[1][0], legs[1][1], 0), \
-                                 tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
-                                 rospy.Time.now(),\
-                                 "/right_leg",   \
-                                 "/base_laser_link")
+                    self.br.sendTransform((legs[1][0], legs[1][1], 0), \
+                                     tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
+                                     rospy.Time.now(),\
+                                     "/right_leg",   \
+                                     "/base_laser_link")
 
-                self.pubShelfSep.publish(self.tf2PoseStamped(shelfOri, tf.transformations.quaternion_from_euler(0, 0, shelfRot)))
+                    self.pubShelfSep.publish(self.tf2PoseStamped(shelfOri, tf.transformations.quaternion_from_euler(0, 0, shelfRot)))
+                except:
+                    continue
                 
             
             if self.priorAvailable:
@@ -214,7 +217,8 @@ class baseScan:
                     newOri, newRot = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
                     newL, newRL = self.listener.lookupTransform("/base_laser_link", "/left_leg", rospy.Time(0))
                     newR, newRR = self.listener.lookupTransform("/base_laser_link", "/right_leg", rospy.Time(0))
-                except:
+                except Exception, e:
+                    print e
                     continue
                     
             if self.reCalibration and math.sqrt((newOri[0]-self.priorOri[0]) **2 + (newOri[1]-self.priorOri[1]) **2) < 0.1:
