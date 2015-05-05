@@ -222,7 +222,7 @@ class baseScan:
                     continue
                     
             if self.reCalibration and math.sqrt((newOri[0]-self.priorOri[0]) **2 + (newOri[1]-self.priorOri[1]) **2) < 0.1:
-                print 'reCalibrated!'
+                rospy.loginfo('reCalibrated!')
                 while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
                     try:
                         newOri, newRot = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
@@ -264,7 +264,7 @@ class baseScan:
             # check in the odometry frame
             if self.calibrated:
                 if math.sqrt((newOri[0]-self.priorOri[0]) **2 + (newOri[1]-self.priorOri[1]) **2) > 0.16:
-                    print colored('something is wrong with shelf pose estimation!!!!!!!!!! RECALIBRATING', 'red', attrs=['blink'])
+                    rospy.logwarn('something is wrong with shelf pose estimation!!!!!!!!!! RECALIBRATING')
                     self.calibrated = False
                     self.reCalibration = True
                 else:
