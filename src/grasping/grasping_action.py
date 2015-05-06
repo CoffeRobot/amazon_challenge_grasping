@@ -20,6 +20,7 @@ import math
 from calibrateBase import baseMove
 from amazon_challenge_motion.bt_motion import BTMotion
 import amazon_challenge_bt_actions.msg
+from grasping.generate_object_dict import *
 
 
 class BTAction(object):
@@ -56,11 +57,15 @@ class BTAction(object):
         self.ft_switch = True
         self.lifting_height = 0.04
         self.retreat_distance = 0.35
-        self.graspingStrategy = 0 # 0 for sideGrasping and 1 for topGrasping
         self.topGraspHeight = 0.1
         self.topGraspingFrame = 'base_link'
         self.sideGraspingTrials = 10
         self.sideGraspingTolerance = math.radians(45)
+        self.base_retreat_distance = 0.5
+        self.topGraspingTrials = 2
+        self.sideGraspingTrials = 2
+        self.dictObj = objDict()
+        self.objSpec = {}
 
         # base movement
         self._bm = baseMove.baseMove(verbose=False)
@@ -75,6 +80,7 @@ class BTAction(object):
     def flush(self):
         self._item = ""
         self._bin = ""
+        self.objSpec = {}
 
     def transformPoseToRobotFrame(self, planPose, planner_frame):
 
@@ -103,6 +109,12 @@ class BTAction(object):
     def execute_cb(self, goal):
         # publish info to the console for the user
         rospy.loginfo('Starting Grasping')
+        try:
+            self.objSpec = self.dictObj.getEntry(self._item)
+        except Exception, e:
+            print e
+            self.set_status('FAILURE')
+            return
 
         # start executing the action
         # check that preempt has not been requested by the client
@@ -112,15 +124,33 @@ class BTAction(object):
             return
 
         rospy.loginfo('Executing Grasping')
+        status = False
+        for gs in self.objSpec.graspStrategy:
+            if gs == 0:
+                for i in range(self.sideGraspingTrials):
+                    status = self.sideGrasping()
+                    if status:
+                        break
+                if status:
+                    break
+            elif gs == 1:
+                for i in range(self.topGraspingTrials):
+                    status = self.topGrasping()
+                    if status:
+                        break
+                if status:
+                    break
+            else:
+                self.flush()
+                rospy.logerr('No strategy found to grasp')
+                self.set_status('FAILURE')
 
-        if self.graspingStrategy[0] == 0:
-            status = self.sideGrasping()
-        elif self.graspingStrategy[0] == 1:
-            status = self.topGrasping()
+        if status:
+            self.set_status('SUCCESS')
         else:
-            self.flush()
-            rospy.logerr('No strategy found to grasp')
             self.set_status('FAILURE')
+        return
+
 
     def topGrasping(self):
 
@@ -251,8 +281,7 @@ class BTAction(object):
 
         if abs(objBinRPY[1]) > 0.5:
             rospy.logerr('require pushing the object')
-            self.set_status('FAILURE')
-            return
+            return False
 
         angle_step = 0
 
@@ -299,7 +328,6 @@ class BTAction(object):
                 pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose_robot.pose, base_frame_id = reaching_pose_robot.header.frame_id, ft=self.ft_switch,
                                                wait=True, tool_x_offset=self._tool_size[0])
             except:
-                self.flush()
                 rospy.logerr('exception in REACHING')
                 continue
 
@@ -321,11 +349,7 @@ class BTAction(object):
                 pr2_moveit_utils.go_tool_frame(self.left_arm, lifting_pose, base_frame_id = 'base_link', ft=self.ft_switch,
                                                wait=True, tool_x_offset=self._tool_size[0])
             except:
-                self.flush()
-                if arm_now == 'right_arm':
-                    self.open_right_gripper()
-                else:
-                    self.open_left_gripper()
+                self.open_left_gripper()
                 rospy.logerr('exception in LIFTING')
                 continue
 
@@ -349,7 +373,7 @@ class BTAction(object):
                 base_pos_dict = rospy.get_param('/base_pos_dict')
                 column = self.get_column()
                 base_pos_goal = base_pos_dict[column]
-                base_pos_goal[0] -= 0.5
+                base_pos_goal[0] -= abs(self.base_retreat_distance)
                 self.go_base_pos_async(base_pos_goal)
             except Exception, e:
                 rospy.logerr(e)
@@ -358,13 +382,11 @@ class BTAction(object):
                 self.open_left_gripper()
 
                 rospy.logerr('exception in RETREATING')
-                self.set_status('FAILURE')
                 continue
 
-            rospy.loginfo('Grasping successfully done')
+            rospy.loginfo('Grasping successful')
             self.flush()
-            self.set_status('SUCCESS')
-            return
+            return True
 
 
 

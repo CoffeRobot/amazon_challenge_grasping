@@ -7,7 +7,7 @@ import tf
 import PyKDL as kdl
 from tf_conversions import posemath
 import numpy
-from generate_object_dict import *
+from grasping.generate_object_dict import *
 from grasping.myTypes import *
 
 def getGraspingAxis(bin_frame, obj_frame, object_name):

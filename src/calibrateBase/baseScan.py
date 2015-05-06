@@ -46,7 +46,7 @@ class baseScan:
         self.pubShelfSep = rospy.Publisher('pubShelfSep', PoseStamped)
         self.tolerance = 0.1
         self.updateRounds = 100
-        self.asyncRate = 30
+        self.asyncRate = 20
 
 
     def raw_input_with_timeout(prompt, timeout=1.0):
@@ -230,8 +230,8 @@ class baseScan:
                 while not rospy.is_shutdown():
                     try:
                         shelf_in_odom, shelf_rot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
-                        self.priorLeft_in_base_laser_link, dummy = self.listener.lookupTransform("/base_laser_link", "/left_leg", rospy.Time(0))
-                        self.priorRight_in_base_laser_link, dummy = self.listener.lookupTransform("/base_laser_link", "/right_leg", rospy.Time(0))
+                        self.priorLeft_in_base_laser_link, dummy = self.listener.lookupTransform("/base_laser_link", "/odomL", rospy.Time(0))
+                        self.priorRight_in_base_laser_link, dummy = self.listener.lookupTransform("/base_laser_link", "/odomR", rospy.Time(0))
                         break
                     except:
                         continue
@@ -412,8 +412,8 @@ class baseScan:
                         while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
                             try:
                                 self.priorOri_in_odom, self.priorRot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
-                                self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/odomL", rospy.Time(0))
-                                self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/odomR", rospy.Time(0))
+                                self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
+                                self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
                                 rospy.loginfo("Prior origin in /odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
                                 break
                             except:
