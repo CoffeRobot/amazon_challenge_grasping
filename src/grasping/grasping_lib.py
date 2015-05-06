@@ -131,4 +131,4 @@ def publishGraspingFrame(bin_name, obj_name):
 if __name__ == "__main__":
 
     rospy.init_node('grasping_lib_test')
-    publishGraspingFrame('shelf_bin_H', 'crayola_64_ct')
+    publishGraspingFrame('shelf_bin_H', 'cheezit_big_original')

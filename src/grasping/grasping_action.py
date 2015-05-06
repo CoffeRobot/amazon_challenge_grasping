@@ -39,9 +39,9 @@ class BTAction(object):
         while not rospy.is_shutdown():
             try:
                 self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
-                self.left_arm.set_planning_time(4.0)
+                self.left_arm.set_planning_time(1.0)
                 self.right_arm = moveit_commander.MoveGroupCommander('right_arm')
-                self.right_arm.set_planning_time(4.0)
+                self.right_arm.set_planning_time(1.0)
                 break
             except:
                 pass
@@ -59,14 +59,14 @@ class BTAction(object):
         self.retreat_distance = 0.35
         self.topGraspHeight = 0.1
         self.topGraspingFrame = 'base_link'
-        self.sideGraspingTrials = 10
-        self.sideGraspingTolerance = math.radians(45)
+        self.sideGraspingTrialAngles = 10
+        self.sideGraspingTolerance = math.radians(30)
         self.base_retreat_distance = 0.5
         self.topGraspingTrials = 2
         self.sideGraspingTrials = 2
         self.dictObj = objDict()
         self.objSpec = {}
-
+        self.gripperWidth = 0.085
         # base movement
         self._bm = baseMove.baseMove(verbose=False)
         self._bm.setPosTolerance(0.02)
@@ -127,6 +127,7 @@ class BTAction(object):
         status = False
         for gs in self.objSpec.graspStrategy:
             if gs == 0:
+                rospy.loginfo("sideGrasping is chosen")
                 for i in range(self.sideGraspingTrials):
                     status = self.sideGrasping()
                     if status:
@@ -134,6 +135,7 @@ class BTAction(object):
                 if status:
                     break
             elif gs == 1:
+                rospy.loginfo("topGrasping is chosen")
                 for i in range(self.topGraspingTrials):
                     status = self.topGrasping()
                     if status:
@@ -269,8 +271,6 @@ class BTAction(object):
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
                 binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector", rospy.Time(0))
                 liftShift = 0.15 - binFrame[0][1]
-                rospy.logerr('liftShift')
-                rospy.logerr(liftShift)
                 rospy.loginfo('got new object pose')
                 tpRPY = self.RPYFromQuaternion(tp[1])
                 objBinRPY = self.RPYFromQuaternion(binFrame[1])
@@ -286,14 +286,15 @@ class BTAction(object):
         angle_step = 0
 
         if objBinRPY[2] < 0:
-            angle_step = -self.sideGraspingTolerance / (self.sideGraspingTrials - 1.0)
+            angle_step = -self.sideGraspingTolerance / (self.sideGraspingTrialAngles - 1.0)
         else:
-            angle_step = self.sideGraspingTolerance / (self.sideGraspingTrials - 1.0)
+            angle_step = self.sideGraspingTolerance / (self.sideGraspingTrialAngles - 1.0)
 
 
-        for i in range(self.sideGraspingTrials):
+        for i in range(self.sideGraspingTrialAngles):
 
             yaw_now = angle_step * i
+            y_shift_now = self.gripperWidth / 2. * (1. - math.cos(yaw_now))
             
             '''
             PRE-GRASPING
@@ -304,7 +305,7 @@ class BTAction(object):
             self.open_left_gripper()
 
             rospy.logerr(yaw_now)
-            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.pre_distance, 0, 0))
+            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.pre_distance, y_shift_now, 0))
             pre_pose_robot = self.transformPoseToRobotFrame(pre_pose, planner_frame)
 
             
@@ -320,7 +321,7 @@ class BTAction(object):
             REACHING
             '''
             rospy.loginfo('REACHING')
-            reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( 0.02,0,0))
+            reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( 0,y_shift_now,0))
             reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
 
         
@@ -392,13 +393,7 @@ class BTAction(object):
 
         #IF THE ACTION HAS FAILED
         self.flush()
-
-
-
-        self.pub_grasped.publish("FAILURE")
-        self.set_status('FAILURE')
-        self.pub_rate.sleep()
-        return
+        return False
 
 
     def set_status(self, status):
