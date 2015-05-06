@@ -113,9 +113,9 @@ class BTAction(object):
 
         rospy.loginfo('Executing Grasping')
 
-        if self.graspingStrategy == 0:
+        if self.graspingStrategy[0] == 0:
             status = self.sideGrasping()
-        elif self.graspingStrategy == 1:
+        elif self.graspingStrategy[0] == 1:
             status = self.topGrasping()
         else:
             self.flush()

@@ -12,6 +12,7 @@ name: name of the object
 invalidApproachAxis <list>: the axis along which the object cannot be approached
 invalidGraspAxis <list>: the axis around which the object cannot be grasped
 graspStrategy: 0 -> sideGrasp, 1 -> topGrasp, 2 -> boundingBoxGrasp
+easy: True/False
 
 axis mapping: (x,y,z) -> (0,1,2)
 '''
@@ -43,13 +44,93 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, 0)
+        cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, [0], True)
         self.dict['cheezit_big_original'] = cheezit_big_original
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        crayola_64_ct = objAttr('crayola_64_ct', invalidApproachAxis, invalidGraspAxis, 0)
+        crayola_64_ct = objAttr('crayola_64_ct', invalidApproachAxis, invalidGraspAxis, [0], True)
         self.dict['crayola_64_ct'] = crayola_64_ct
+
+        invalidApproachAxis = [1]
+        invalidGraspAxis = [2]
+        elmers_washable_no_run_school_glue = objAttr('elmers_washable_no_run_school_glue', invalidApproachAxis, invalidGraspAxis, [0,1], True)
+        self.dict['elmers_washable_no_run_school_glue'] = elmers_washable_no_run_school_glue
+
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        first_years_take_and_toss_straw_cup = objAttr('first_years_take_and_toss_straw_cup', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['first_years_take_and_toss_straw_cup'] = first_years_take_and_toss_straw_cup
+
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        kong_air_dog_squeakair_tennis_ball = objAttr('kong_air_dog_squeakair_tennis_ball', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['kong_air_dog_squeakair_tennis_ball'] = kong_air_dog_squeakair_tennis_ball
+
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        kong_duck_dog_toy = objAttr('kong_duck_dog_toy', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['kong_duck_dog_toy'] = kong_duck_dog_toy
+
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        kong_sitting_frog_dog_toy = objAttr('kong_sitting_frog_dog_toy', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['kong_sitting_frog_dog_toy'] = kong_sitting_frog_dog_toy
+
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        kyjen_squeakin_eggs_plush_puppies = objAttr('kyjen_squeakin_eggs_plush_puppies', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['kyjen_squeakin_eggs_plush_puppies'] = kyjen_squeakin_eggs_plush_puppies
+
+
+        invalidApproachAxis = [2]
+        invalidGraspAxis = [2]
+        laugh_out_loud_joke_book = objAttr('laugh_out_loud_joke_book', invalidApproachAxis, invalidGraspAxis, [0], False)
+        self.dict['laugh_out_loud_joke_book'] = laugh_out_loud_joke_book
+
+        invalidApproachAxis = [2]
+        invalidGraspAxis = [2]
+        mead_index_cards = objAttr('mead_index_cards', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['mead_index_cards'] = mead_index_cards
+
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [0,1], True)
+        self.dict['munchkin_white_hot_duck_bath_toy'] = munchkin_white_hot_duck_bath_toy
+
+        invalidApproachAxis = [2]
+        invalidGraspAxis = [2]
+        oreo_mega_stuf = objAttr('oreo_mega_stuf', invalidApproachAxis, invalidGraspAxis, [0], True)
+        self.dict['oreo_mega_stuf'] = oreo_mega_stuf
+
+        invalidApproachAxis = [0]
+        invalidGraspAxis = [0]
+        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1,0], True)
+        self.dict['paper_mate_12_count_mirado_black_warrior'] = paper_mate_12_count_mirado_black_warrior
+
+        invalidApproachAxis = [2]
+        invalidGraspAxis = [2]
+        sharpie_accent_tank_style_highlighters = objAttr('sharpie_accent_tank_style_highlighters', invalidApproachAxis, invalidGraspAxis, [0], False)
+        self.dict['sharpie_accent_tank_style_highlighters'] = sharpie_accent_tank_style_highlighters
+
+        invalidApproachAxis = [2]
+        invalidGraspAxis = [2]
+        stanley_66_052 = objAttr('stanley_66_052', invalidApproachAxis, invalidGraspAxis, [1,0], False)
+        self.dict['stanley_66_052'] = stanley_66_052
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def saveDict(self):
 
