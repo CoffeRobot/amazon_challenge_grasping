@@ -53,7 +53,7 @@ class BTAction(object):
         self._bin = ""
         self.l_gripper_pub = rospy.Publisher('/l_gripper_controller/command', Pr2GripperCommand)
         self.r_gripper_pub = rospy.Publisher('/r_gripper_controller/command', Pr2GripperCommand)
-        self.pre_distance = -0.16
+        self.pre_distance = -0.2
         self.ft_switch = True
         self.lifting_height = 0.04
         self.retreat_distance = 0.35
@@ -73,6 +73,7 @@ class BTAction(object):
         self._bm.setAngTolerance(0.006)
         self._bm.setLinearGain(0.4)
         self._bm.setAngularGain(1)
+        self.grasping_param_dict = rospy.get_param('/grasping_param_dict')
 
         self._tool_size = rospy.get_param('/tool_size', [0.16, 0.02, 0.04])
         rospy.loginfo('Grapsing action ready')
@@ -295,7 +296,7 @@ class BTAction(object):
 
             yaw_now = angle_step * i
             y_shift_now = self.gripperWidth / 2. * (1. - math.cos(yaw_now))
-            
+            x_shift_now = y_shift_now * math.tan(y_shift_now)
             '''
             PRE-GRASPING
             '''
@@ -305,7 +306,7 @@ class BTAction(object):
             self.open_left_gripper()
 
             rospy.logerr(yaw_now)
-            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.pre_distance, y_shift_now, 0))
+            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.pre_distance - x_shift_now, y_shift_now, 0))
             pre_pose_robot = self.transformPoseToRobotFrame(pre_pose, planner_frame)
 
             
@@ -321,7 +322,7 @@ class BTAction(object):
             REACHING
             '''
             rospy.loginfo('REACHING')
-            reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( 0,y_shift_now,0))
+            reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, 0), kdl.Vector( -0.06 ,y_shift_now,0))
             reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
 
         
