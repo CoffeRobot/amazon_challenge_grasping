@@ -3,4 +3,4 @@
 
 from collections import namedtuple
 
-objAttr = namedtuple('objAttr', ['name', 'invalidApproachAxis', 'invalidGraspAxis', 'graspStrategy', 'easy'])
+objAttr = namedtuple('objAttr', ['name', 'invalidApproachAxis', 'invalidGraspAxis', 'graspStrategy', 'easy', 'pre_distance'])
