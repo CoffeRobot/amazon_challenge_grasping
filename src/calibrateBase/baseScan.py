@@ -47,6 +47,8 @@ class baseScan:
         self.tolerance = 0.1
         self.updateRounds = 100
         self.asyncRate = 20
+        self.limitInitX = True
+        self.xLimit = 0.1
 
 
     def raw_input_with_timeout(prompt, timeout=1.0):
@@ -96,12 +98,12 @@ class baseScan:
         radius = []
 
         if self.calibrated or self.reCalibration: # use prior to find legs
-            for i in range(len(pc)):
+            for i in range(len(x)):
                 radius.append(math.sqrt((x[i]-self.priorLeft_in_base_laser_link[0])**2 + (y[i] - self.priorLeft_in_base_laser_link[1])**2))
             n1 = radius.index(min(radius))
 
             radius = []
-            for i in range(len(pc)):
+            for i in range(len(x)):
                 radius.append(math.sqrt((x[i]-self.priorRight_in_base_laser_link[0])**2 + (y[i] - self.priorRight_in_base_laser_link[1])**2))
             n2 = radius.index(min(radius))
 
@@ -110,7 +112,11 @@ class baseScan:
             leg2 = [x[n2], y[n2]]
         else:
             # Assuming there is nothing between the robot and the shelf
-            for i in range(len(pc)):
+            if self.limitInitX:
+                y = [y[i] for i in range(len(y)) if x[i] >= self.xLimit]
+                x = [x[i] for i in range(len(x)) if x[i] >= self.xLimit]
+
+            for i in range(len(x)):
                 radius.append(math.sqrt(x[i]**2 + y[i]**2))
             n = radius.index(min(radius))
             
@@ -239,7 +245,7 @@ class baseScan:
                 try:
                     shelf_in_odom, shelf_rot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
                 except Exception, e:
-                    print e
+                    # print e
                     continue
                     
             if self.reCalibration and math.sqrt((shelf_in_odom[0]-self.priorOri_in_odom[0]) **2 + (shelf_in_odom[1]-self.priorOri_in_odom[1]) **2) <= self.tolerance:
