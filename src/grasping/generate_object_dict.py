@@ -64,7 +64,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kong_air_dog_squeakair_tennis_ball = objAttr('kong_air_dog_squeakair_tennis_ball', invalidApproachAxis, invalidGraspAxis, [1,0], True, 0.06)
+        kong_air_dog_squeakair_tennis_ball = objAttr('kong_air_dog_squeakair_tennis_ball', invalidApproachAxis, invalidGraspAxis, [1], True, 0.06)
         self.dict['kong_air_dog_squeakair_tennis_ball'] = kong_air_dog_squeakair_tennis_ball
 
         invalidApproachAxis = []
@@ -85,12 +85,12 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        laugh_out_loud_joke_book = objAttr('laugh_out_loud_joke_book', invalidApproachAxis, invalidGraspAxis, [0], False, 0.06)
+        laugh_out_loud_joke_book = objAttr('laugh_out_loud_joke_book', invalidApproachAxis, invalidGraspAxis, [0, 1], False, 0.06)
         self.dict['laugh_out_loud_joke_book'] = laugh_out_loud_joke_book
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        mead_index_cards = objAttr('mead_index_cards', invalidApproachAxis, invalidGraspAxis, [1,0], True, 0.06)
+        mead_index_cards = objAttr('mead_index_cards', invalidApproachAxis, invalidGraspAxis, [1], True, 0.06)
         self.dict['mead_index_cards'] = mead_index_cards
 
         invalidApproachAxis = []
