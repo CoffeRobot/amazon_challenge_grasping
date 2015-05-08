@@ -64,13 +64,18 @@ def getGraspingAxis(bin_frame, obj_frame, object_name):
 
 def getGraspFrame(listener, shelf_bin, object_name):
 
-    while not rospy.is_shutdown():
+    got = False
+    for i in range(10):
         try:
             bin_frame = listener.lookupTransform('/base_link', shelf_bin, rospy.Time(0))
             obj_frame = listener.lookupTransform('/base_link', object_name, rospy.Time(0))
+            got = True
             break
         except:
+            rospy.sleep(0.1)
             pass
+    if not got:
+        raise Exception('getGraspFrame failed')
 
     try:
         approchVec, approchDir, graspingVec, graspingDir = getGraspingAxis(bin_frame, obj_frame, object_name)

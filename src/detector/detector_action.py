@@ -16,7 +16,7 @@ import sys
 import tf
 import threading
 from grasping.myTypes import *
-
+from simtrack_nodes.srv import *
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
@@ -42,6 +42,21 @@ class superDetector(object):
         self.vThresh = 0.1
         self.updating = False
         self.lock = threading.Lock()
+        rospy.wait_for_service('/simtrack/tracker_switch_camera')
+        self.cameraSrv = rospy.ServiceProxy('/simtrack/tracker_switch_camera', SwitchCamera)
+        rospy.wait_for_service('/simtrack/tracker_switch_objects')
+        self.objSrv = rospy.ServiceProxy('/simtrack/tracker_switch_objects', SwitchObjects)
+        self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
+        self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
+        self.torso_joint_pos_dict = rospy.get_param('/torso_joint_pos_dict')
+        while not rospy.is_shutdown():
+            try:
+                self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
+                self.right_arm = moveit_commander.MoveGroupCommander('right_arm')
+                self.torso = moveit_commander.MoveGroupCommander('torso')
+                break
+            except:
+                pass
 
     def flush(self):
         self._item = ""
@@ -79,48 +94,146 @@ class superDetector(object):
         self._bin = words[0]
         self._item = words[1]
 
-    def receive_update(self,goal):
-        self.lock.acquire()
-        rospy.loginfo('Goal Received')
-        poseAccumulation = []
-        self.updating = True
 
+    
+
+    def getSimTrackUpdate(self):
+
+        rospy.sleep(2)
 
         self.obsAccumulation = []
         enough = False
         good = False
         for i in range(self.trials):
-            while not rospy.is_shutdown():
-                rospy.sleep(0.01)
-                try:
-                    rospy.loginfo('try to update object pose')
-                    self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item)
-                    # self.tp = self.listener.lookupTransform('/base_link', '/' + self._item, rospy.Time(0))
-                    rospy.loginfo('object pose UPDATED')
-                    self.obsAccumulation.append(self.tp[0])
-                    if len(self.obsAccumulation) == self.obsN:
-                        enough = True
-                        break
-                except:
-                    continue
+            rospy.sleep(0.01)
+            try:
+                self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item)
+                self.obsAccumulation.append(self.tp[0])
+                if len(self.obsAccumulation) == self.obsN:
+                    enough = True
+            except:
+                continue
             if enough:
                 break
 
-        rospy.loginfo('validation')
-        good = self.validate()
+        if enough:
+            # rospy.loginfo('validation')
+            good = self.validate()
 
-        if not enough or not good:
-            # rospy.loginfo('not enough or not good')
-            self.set_status('FAILURE')
-
-
+        if good:
+            return True
         else:
-            # rospy.loginfo('enough and good')
+            return False
+
+    def move_arm_to_init(self, arm_name):
+
+        if arm_name == 'right_arm':
+            try:
+                self.right_arm.set_joint_value_target(self.right_arm_joint_pos_dict['start'])
+                self.right_arm.go(wait=True)
+            except:
+                rospy.logerr('can not move right arm to init pose')
+                return False
+        elif arm_name == 'left_arm':
+            try:
+                self.left_arm.set_joint_value_target(self.left_arm_joint_pos_dict['start'])
+                self.left_arm.go(wait=True)
+            except:
+                rospy.logerr('can not move left arm to init pose')
+                return False
+
+        return True
+
+    def receive_update(self,goal):
+
+        self.lock.acquire()
+        rospy.loginfo('Goal Received')
+        self.updating = True
+
+        self.objSrv.call([self._item])
+        
+        # try with kinect
+        rospy.loginfo('try to update object pose with kinect')
+        self.cameraSrv.call(0)
+        if self.getSimTrackUpdate():
+            rospy.loginfo('object pose UPDATED')
             self.set_status('SUCCESS')
+            self.updating = False
+            self.lock.release()
+            return
 
 
+        rospy.loginfo('try to update object pose with left arm camera')
+        self.cameraSrv.call(1)
+        detect = True
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+            self.torso.go()
+            self.left_arm.set_joint_value_target(self.left_arm_joint_pos_dict['detector'][self.get_row()])
+            self.left_arm.go(wait=True)
+        except:
+            rospy.logerr('can not move left arm to detecting pose')
+            detect = False
+
+        if detect:
+            if self.getSimTrackUpdate():
+                rospy.loginfo('object pose UPDATED')
+                if self.move_arm_to_init('left_arm'):
+                    self.set_status('SUCCESS')
+                else:
+                    self.set_status('FAILURE')
+                self.updating = False
+                self.lock.release()
+                return
+
+        if not self.move_arm_to_init('left_arm'):
+            self.set_status("FAILURE")
+            return
+
+
+
+        rospy.loginfo('try to update object pose with right arm camera')
+        self.cameraSrv.call(2)
+        detect = True
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+            self.torso.go()
+            self.right_arm.set_joint_value_target(self.right_arm_joint_pos_dict['detector'][self.get_row()])
+            self.right_arm.go(wait=True)
+        except:
+            rospy.logerr('can not move right arm to detecting pose')
+            detect = False
+
+        if detect:
+            if self.getSimTrackUpdate():
+                rospy.loginfo('object pose UPDATED')
+                if self.move_arm_to_init('right_arm'):
+                    self.set_status('SUCCESS')
+                else:
+                    self.set_status('FAILURE')
+                self.updating = False
+                self.lock.release()
+                return
+
+        if not self.move_arm_to_init('right_arm'):
+            self.set_status("FAILURE")
+            return
+
+        '''
+        Point Cloud segmentation code comes in here
+        '''
+
+        rospy.loginfo('object pose UPDATED')
+        self.set_status('FAILURE')
         self.updating = False
         self.lock.release()
+        return
+
+
+
+
+
+
 
 
 
@@ -162,6 +275,26 @@ class superDetector(object):
         for x in l:
             lVariance += (x - lMean)**2
         return lVariance / len(l)
+
+
+    def get_row(self):
+        while not rospy.is_shutdown():
+            try:
+                if self._bin=='bin_A' or self._bin=='bin_B' or self._bin=='bin_C':
+                    return 'row_1'
+
+                elif self._bin=='bin_D' or self._bin=='bin_E' or self._bin=='bin_F':
+                    return 'row_2'
+
+                elif self._bin=='bin_G' or self._bin=='bin_H' or self._bin=='bin_I':
+                    return 'row_3'
+
+               
+                elif self._bin=='bin_J' or self._bin=='bin_K' or self._bin=='bin_L':
+                    return 'row_4'
+            except:
+                pass
+
 
 
 if __name__ == '__main__':
