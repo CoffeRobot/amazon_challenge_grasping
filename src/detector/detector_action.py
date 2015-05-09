@@ -17,6 +17,8 @@ import tf
 import threading
 from grasping.myTypes import *
 from simtrack_nodes.srv import *
+from vision.srv import StartAggregator
+
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
@@ -42,10 +44,14 @@ class superDetector(object):
         self.vThresh = 0.1
         self.updating = False
         self.lock = threading.Lock()
-        rospy.wait_for_service('/simtrack/tracker_switch_camera')
+        rospy.wait_for_service('/simtrack/tracker_switch_camera', 10)
         self.cameraSrv = rospy.ServiceProxy('/simtrack/tracker_switch_camera', SwitchCamera)
-        rospy.wait_for_service('/simtrack/tracker_switch_objects')
+        rospy.wait_for_service('/simtrack/tracker_switch_objects', 10)
         self.objSrv = rospy.ServiceProxy('/simtrack/tracker_switch_objects', SwitchObjects)
+        rospy.wait_for_service('/aggregate_cloud', 10)
+        self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
+
+
         self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
         self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
         self.torso_joint_pos_dict = rospy.get_param('/torso_joint_pos_dict')
@@ -152,6 +158,25 @@ class superDetector(object):
 
         self.objSrv.call([self._item])
         
+        rospy.loginfo('try to update object pose with point cloud segmentation')
+        self.segSrv.call(1)
+
+        detect = True
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+            self.torso.go()
+        except:
+            rospy.logerr('can not move torso to detecting pose')
+            detect = False
+
+        if detect:
+            if self.getSimTrackUpdate():
+                rospy.loginfo('object pose UPDATED')
+                self.set_status('SUCCESS')
+                self.updating = False
+                self.lock.release()
+                return
+
         # try with kinect
         rospy.loginfo('try to update object pose with kinect')
         self.cameraSrv.call(0)
@@ -174,6 +199,7 @@ class superDetector(object):
         except:
             rospy.logerr('can not move left arm to detecting pose')
             detect = False
+
 
         if detect:
             if self.getSimTrackUpdate():
@@ -219,11 +245,11 @@ class superDetector(object):
             self.set_status("FAILURE")
             return
 
-        '''
-        Point Cloud segmentation code comes in here
-        '''
 
-        rospy.loginfo('object pose UPDATED')
+
+        
+
+        rospy.loginfo('object pose CANNOT be UPDATED')
         self.set_status('FAILURE')
         self.updating = False
         self.lock.release()
