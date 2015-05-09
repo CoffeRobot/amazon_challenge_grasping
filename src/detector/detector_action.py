@@ -158,24 +158,6 @@ class superDetector(object):
 
         self.objSrv.call([self._item])
         
-        rospy.loginfo('try to update object pose with point cloud segmentation')
-        self.segSrv.call(1)
-
-        detect = True
-        try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
-            self.torso.go()
-        except:
-            rospy.logerr('can not move torso to detecting pose')
-            detect = False
-
-        if detect:
-            if self.getSimTrackUpdate():
-                rospy.loginfo('object pose UPDATED')
-                self.set_status('SUCCESS')
-                self.updating = False
-                self.lock.release()
-                return
 
         # try with kinect
         rospy.loginfo('try to update object pose with kinect')
@@ -245,6 +227,24 @@ class superDetector(object):
             self.set_status("FAILURE")
             return
 
+        rospy.loginfo('try to update object pose with point cloud segmentation')
+        self.segSrv.call(1)
+
+        detect = True
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+            self.torso.go()
+        except:
+            rospy.logerr('can not move torso to detecting height')
+            detect = False
+
+        if detect:
+            if self.getSimTrackUpdate():
+                rospy.loginfo('object pose UPDATED')
+                self.set_status('SUCCESS')
+                self.updating = False
+                self.lock.release()
+                return
 
 
         
