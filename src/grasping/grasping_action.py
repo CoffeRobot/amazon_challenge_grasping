@@ -76,12 +76,14 @@ class BTAction(object):
         self.dictObj = objDict()
         self.objSpec = {}
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
-        # base movement
+
+        # get base_move parameters
+        base_move_params = rospy.get_param('/base_move')
         self._bm = baseMove.baseMove(verbose=False)
-        self._bm.setPosTolerance(0.02)
-        self._bm.setAngTolerance(0.006)
-        self._bm.setLinearGain(0.4)
-        self._bm.setAngularGain(1)
+        self._bm.setPosTolerance(base_move_params['pos_tolerance'])
+        self._bm.setAngTolerance(base_move_params['ang_tolerance'])
+        self._bm.setLinearGain(base_move_params['linear_gain'])
+        self._bm.setAngularGain(base_move_params['angular_gain'])
 
         self._tool_size = rospy.get_param('/tool_size', [0.16, 0.02, 0.04])
         rospy.loginfo('Grapsing action ready')
