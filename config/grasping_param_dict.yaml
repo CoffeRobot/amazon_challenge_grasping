@@ -16,6 +16,7 @@ grasping_param_dict:
   topGraspingFrame: 'base_link'
   topGraspingTrials: 2
   topGraspingPitchTrials: 10
+  topGraspingShakingNumber: 4
 
   row_height:
     row_1: 0

@@ -72,6 +72,7 @@ class BTAction(object):
         self.topGraspingRoll = self.grasping_param_dict['topGraspingRoll']
         self.topGraspingPitchTolerance = self.grasping_param_dict['topGraspingPitchTolerance']
         self.topGraspingPitchTrials = self.grasping_param_dict['topGraspingPitchTrials']
+        self.topGraspingShakingNumber = self.grasping_param_dict['topGraspingShakingNumber']
         self.dictObj = objDict()
         self.objSpec = {}
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
@@ -169,6 +170,8 @@ class BTAction(object):
         while not rospy.is_shutdown():
             try:
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
+                binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector", rospy.Time(0))
+                liftShift = 0.15 - binFrame[0][1]
                 rospy.loginfo('got new object pose')
                 tpRPY = self.RPYFromQuaternion(tp[1])
                 break
@@ -237,19 +240,21 @@ class BTAction(object):
 
             shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + 0.02, touching_height))
             shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] - 0.02, touching_height))
-            try:
-                pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose1, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True, tool_x_offset=self._tool_size[0])
-            except:
-                self.flush()
-                rospy.logerr('exception in SMART-SHAKING 1, never mind')
 
-            try:
-                pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose2, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
-                                               wait=True, tool_x_offset=self._tool_size[0])
-            except:
-                self.flush()
-                rospy.logerr('exception in SMART-SHAKING 2, never mind')
+            for i in range(self.topGraspingShakingNumber):
+                try:
+                    pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose1, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
+                                                   wait=True, tool_x_offset=self._tool_size[0])
+                except:
+                    self.flush()
+                    rospy.logerr('exception in SMART-SHAKING 1, never mind')
+
+                try:
+                    pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose2, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
+                                                   wait=True, tool_x_offset=self._tool_size[0])
+                except:
+                    self.flush()
+                    rospy.logerr('exception in SMART-SHAKING 2, never mind')
 
 
             '''
@@ -262,7 +267,7 @@ class BTAction(object):
             LIFTING
             '''
 
-            lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1], tp[0][2] + self.topGraspHeight))
+            lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.topGraspHeight))
             
 
 
@@ -399,17 +404,6 @@ class BTAction(object):
             RETREATING
             '''
             rospy.loginfo('RETREATING')
-            # retreating_pose = kdl.Frame(kdl.Rotation.RPY(tpRPY[0], tpRPY[1], tpRPY[2]), kdl.Vector( tp[0][0] - self.retreat_distance, tp[0][1], tp[0][2]))
-
-        
-            # try:
-            #     pr2_moveit_utils.go_tool_frame(self.left_arm, retreating_pose, base_frame_id = 'base_link', ft=self.ft_switch,
-            #                                    wait=True, tool_x_offset=self._tool_size[0])
-            # except:
-            #     self.flush()
-            #     rospy.logerr('exception in RETREATING')
-            #     self.set_status('FAILURE')
-            #     return
 
             try:
                 base_pos_dict = rospy.get_param('/base_pos_dict')
