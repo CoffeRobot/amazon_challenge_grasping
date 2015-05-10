@@ -21,6 +21,7 @@ from calibrateBase import baseMove
 from amazon_challenge_motion.bt_motion import BTMotion
 import amazon_challenge_bt_actions.msg
 from grasping.generate_object_dict import *
+import random
 
 
 class BTAction(object):
@@ -55,8 +56,14 @@ class BTAction(object):
         self.l_gripper_pub = rospy.Publisher('/l_gripper_controller/command', Pr2GripperCommand)
         self.r_gripper_pub = rospy.Publisher('/r_gripper_controller/command', Pr2GripperCommand)
         
+        while not rospy.is_shutdown():
+            try:
+                self.grasping_param_dict = rospy.get_param('/grasping_param_dict')
+                break
+            except:
+                rospy.sleep(random.uniform(0,1))
+                continue
 
-        self.grasping_param_dict = rospy.get_param('/grasping_param_dict')
         self.pre_distance = self.grasping_param_dict['pre_distance'] # should get from grasping_dict
         self.ft_switch = self.grasping_param_dict['ft_switch']
         self.lifting_height = self.grasping_param_dict['lifting_height']
@@ -78,14 +85,28 @@ class BTAction(object):
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
 
         # get base_move parameters
-        base_move_params = rospy.get_param('/base_move')
+        while not rospy.is_shutdown():
+            try:
+                base_move_params = rospy.get_param('/base_move')
+                self.base_pos_dict = rospy.get_param('/base_pos_dict')
+                break
+            except:
+                rospy.sleep(random.uniform(0,1))
+                continue
+
         self._bm = baseMove.baseMove(verbose=False)
         self._bm.setPosTolerance(base_move_params['pos_tolerance'])
         self._bm.setAngTolerance(base_move_params['ang_tolerance'])
         self._bm.setLinearGain(base_move_params['linear_gain'])
         self._bm.setAngularGain(base_move_params['angular_gain'])
 
-        self._tool_size = rospy.get_param('/tool_size', [0.16, 0.02, 0.04])
+        while not rospy.is_shutdown():
+            try:
+                self._tool_size = rospy.get_param('/tool_size', [0.16, 0.02, 0.04])
+                break
+            except:
+                rospy.sleep(random.uniform(0,1))
+                continue
         rospy.loginfo('Grapsing action ready')
 
     def flush(self):
@@ -287,10 +308,11 @@ class BTAction(object):
             '''
             rospy.loginfo('RETREATING')
 
+
+
             try:
-                base_pos_dict = rospy.get_param('/base_pos_dict')
                 column = self.get_column()
-                base_pos_goal = base_pos_dict[column]
+                base_pos_goal = self.base_pos_dict[column]
                 base_pos_goal[0] -= abs(self.base_retreat_distance)
                 self.go_base_pos_async(base_pos_goal)
             except Exception, e:
@@ -408,9 +430,8 @@ class BTAction(object):
             rospy.loginfo('RETREATING')
 
             try:
-                base_pos_dict = rospy.get_param('/base_pos_dict')
                 column = self.get_column()
-                base_pos_goal = base_pos_dict[column]
+                base_pos_goal = self.base_pos_dict[column]
                 base_pos_goal[0] -= abs(self.base_retreat_distance)
                 self.go_base_pos_async(base_pos_goal)
             except Exception, e:

@@ -18,6 +18,7 @@ import threading
 from grasping.myTypes import *
 from simtrack_nodes.srv import *
 from vision.srv import StartAggregator
+import random
 
 
 class superDetector(object):
@@ -51,10 +52,16 @@ class superDetector(object):
         rospy.wait_for_service('/aggregate_cloud', 10)
         self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
 
+        while not rospy.is_shutdown():
+            try:
+                self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
+                self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
+                self.torso_joint_pos_dict = rospy.get_param('/torso_joint_pos_dict')
+                break
+            except:
+                rospy.sleep(random.uniform(0,1))
+                continue
 
-        self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
-        self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
-        self.torso_joint_pos_dict = rospy.get_param('/torso_joint_pos_dict')
         while not rospy.is_shutdown():
             try:
                 self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
