@@ -2,7 +2,7 @@
 
   <arg name="sim" default="false"/>
 
-  <node name="amazon_detector" pkg="amazon_challenge_grasping" type="detector_action.py" output="screen"/>
+  <node name="amazon_detector" pkg="amazon_challenge_grasping" type="detector_action.py" output="screen" respawn="true"/>
 
   <group if="$(arg sim)">
     <node name="action_client" pkg="amazon_challenge_bt_actions" type="ActionClient" output="screen">
