@@ -51,6 +51,8 @@ class superDetector(object):
         self.objSrv = rospy.ServiceProxy('/simtrack/tracker_switch_objects', SwitchObjects)
         rospy.wait_for_service('/aggregate_cloud', 10)
         self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
+        self.simTrackUsed = True
+        self.found = False
 
         while not rospy.is_shutdown():
             try:
@@ -80,23 +82,34 @@ class superDetector(object):
 
     def my_pub(self):
 
-        if self.updating:
-            return
         # publish info to the console for the user
         rospy.loginfo('Starting Detecting')
 
 
         while not rospy.is_shutdown():
-            if len(self._item) == 0 or len(self._bin) == 0:
+            if self.updating:
                 continue
-            try:
-                self.br.sendTransform(self.tp[0], self.tp[1], rospy.Time.now(),\
-                                         "/" + self._item + "_detector",   \
-                                         '/' + 'shelf_' + self._bin)
-                self.pub_rate.sleep()
-            except:
+            if not self.found:
                 continue
 
+            if len(self._item) == 0 or len(self._bin) == 0:
+                continue
+            if self.simTrackUsed:
+                try:
+                    self.br.sendTransform(self.tp[0], self.tp[1], rospy.Time.now(),\
+                                             "/" + self._item + "_detector",   \
+                                             '/' + 'shelf_' + self._bin)
+                    self.pub_rate.sleep()
+                except:
+                    continue
+            else:
+                try:
+                    self.br.sendTransform(self.tp[0], self.tp[1], rospy.Time.now(),\
+                                             "/" + self._item + "_detector_seg",   \
+                                             '/' + 'shelf_' + self._bin)
+                    self.pub_rate.sleep()
+                except:
+                    continue
 
 
     def get_task(self, msg):
@@ -111,8 +124,6 @@ class superDetector(object):
     
 
     def getSimTrackUpdate(self):
-
-        rospy.sleep(2)
 
         self.obsAccumulation = []
         enough = False
@@ -130,7 +141,6 @@ class superDetector(object):
                 break
 
         if enough:
-            # rospy.loginfo('validation')
             good = self.validate()
 
         if good:
@@ -162,19 +172,53 @@ class superDetector(object):
         self.lock.acquire()
         rospy.loginfo('Goal Received')
         self.updating = True
+        self.found = False
 
         self.objSrv.call([self._item])
         
-
-        # try with kinect
         rospy.loginfo('try to update object pose with kinect')
-        self.cameraSrv.call(0)
+
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+            self.torso.go()
+            self.cameraSrv.call(0)
+        except:
+            rospy.logerr('can not move torso to detecting height')
+            detect = False
+
         if self.getSimTrackUpdate():
+            self.found = True
             rospy.loginfo('object pose UPDATED')
+            self.simTrackUsed = True
             self.set_status('SUCCESS')
             self.updating = False
             self.lock.release()
             return
+
+        rospy.loginfo('try to update object pose with point cloud segmentation')
+
+        detect = True
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+            self.torso.go()
+            self.cameraSrv.call(0)
+            self.segSrv.call(0)
+        except:
+            rospy.logerr('can not move torso to detecting height')
+            detect = False
+
+        if detect:
+            if self.getSimTrackUpdate():
+                self.found = True
+                rospy.loginfo('object pose UPDATED')
+                self.simTrackUsed = False
+                self.set_status('SUCCESS')
+                self.updating = False
+                self.lock.release()
+                return
+        self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
+                
+        # try with kinect
 
 
         rospy.loginfo('try to update object pose with left arm camera')
@@ -192,8 +236,10 @@ class superDetector(object):
 
         if detect:
             if self.getSimTrackUpdate():
-                rospy.loginfo('object pose UPDATED')
                 if self.move_arm_to_init('left_arm'):
+                    self.simTrackUsed = True
+                    rospy.loginfo('object pose UPDATED')
+                    self.found = True
                     self.set_status('SUCCESS')
                 else:
                     self.set_status('FAILURE')
@@ -221,8 +267,10 @@ class superDetector(object):
 
         if detect:
             if self.getSimTrackUpdate():
-                rospy.loginfo('object pose UPDATED')
                 if self.move_arm_to_init('right_arm'):
+                    rospy.loginfo('object pose UPDATED')
+                    self.simTrackUsed = True
+                    self.found = True
                     self.set_status('SUCCESS')
                 else:
                     self.set_status('FAILURE')
@@ -234,24 +282,6 @@ class superDetector(object):
             self.set_status("FAILURE")
             return
 
-        rospy.loginfo('try to update object pose with point cloud segmentation')
-        self.segSrv.call(1)
-
-        detect = True
-        try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
-            self.torso.go()
-        except:
-            rospy.logerr('can not move torso to detecting height')
-            detect = False
-
-        if detect:
-            if self.getSimTrackUpdate():
-                rospy.loginfo('object pose UPDATED')
-                self.set_status('SUCCESS')
-                self.updating = False
-                self.lock.release()
-                return
 
 
         
