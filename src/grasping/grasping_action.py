@@ -13,7 +13,7 @@ import sys
 import tf
 import PyKDL as kdl
 import pr2_moveit_utils.pr2_moveit_utils as pr2_moveit_utils
-from pr2_controllers_msgs.msg import Pr2GripperCommand
+from pr2_controllers_msgs.msg import Pr2GripperCommand, JointControllerState
 from geometry_msgs.msg import Pose, PoseStamped
 from tf_conversions import posemath
 import math
@@ -55,7 +55,8 @@ class BTAction(object):
         self._bin = ""
         self.l_gripper_pub = rospy.Publisher('/l_gripper_controller/command', Pr2GripperCommand)
         self.r_gripper_pub = rospy.Publisher('/r_gripper_controller/command', Pr2GripperCommand)
-        
+
+
         while not rospy.is_shutdown():
             try:
                 self.grasping_param_dict = rospy.get_param('/grasping_param_dict')
@@ -89,6 +90,7 @@ class BTAction(object):
             try:
                 base_move_params = rospy.get_param('/base_move')
                 self.base_pos_dict = rospy.get_param('/base_pos_dict')
+                self.grasp_check_dict = rospy.get_param('/grasp_check_dict')
                 break
             except:
                 rospy.sleep(random.uniform(0,1))
@@ -407,6 +409,18 @@ class BTAction(object):
             '''
             rospy.loginfo('GRASPING')
             self.close_left_gripper()
+
+            '''
+            CHECKING THE GRIPPER ANGLE POS
+            '''
+            rospy.loginfo('[grasp_object]: Checking gripper angle pos')
+            # action has failed... return false
+            if not self.check_gripper_angle():
+                rospy.logerr('[grasp_object]: grasping action failed')
+                self.flush()
+                return False
+
+
             '''
             LIFTING
             '''
@@ -596,6 +610,47 @@ class BTAction(object):
             except:
                 pass
 
+    def gripper_controller_state_callback(self, msg):
+        self._gripper_pos = msg.process_value
+        self._gripper_vel = msg.process_value_dot
+        self._got_gripper_controller_state = True
+
+    def check_gripper_angle(self):
+        '''
+        Checks gripper angle to indicate success or failure
+        '''
+        # return true if we do not want to check the gripper angle pos
+        if not self.grasp_check_dict[self._item]['check_gripper_angle']:
+            rospy.logwarn('[grasp_action]: no checking of gripper angle pos for item ' + self._item + '')
+            return True
+
+        self._gripper_pos = 0.0
+        self._gripper_vel = 10.0
+        self._got_gripper_controller_state = False
+
+        l_gripper_controller_state_sub = rospy.Subscriber('/l_gripper_controller/state', JointControllerState, self.gripper_controller_state_callback)
+        rospy.sleep(1.0)
+
+        r = rospy.Rate(1.0)
+        t_init = rospy.Time.now()
+
+        while not rospy.is_shutdown() and not self._got_gripper_controller_state and not abs(self._gripper_vel)<self.grasp_check_dict['gripper_vel_threshold']:
+
+            # timeout
+            if(rospy.Time.now()-t_init).to_sec()>self.grasp_check_dict['timeout']:
+                rospy.logerr('[grasp_object]: check gripper angle timed out')
+                return False
+
+            r.sleep()
+
+        l_gripper_controller_state_sub.unregister()
+
+        if self._gripper_pos<self.grasp_check_dict[self._item]['angle_threshold']:
+            rospy.logerr('[grasp_object]: object not grasped, check gripper angle failed')
+            return False
+
+        rospy.loginfo('[grasp_object]: check gripper angle succeeded!')
+        return True
 
 
 

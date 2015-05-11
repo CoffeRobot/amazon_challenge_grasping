@@ -2,6 +2,10 @@ angle_threshold: &angle_threshold 0.0
 
 grasp_check_dict:
   
+  gripper_vel_threshold: 0.00001
+  
+  timeout: 5.0
+  
   oreo_mega_stuf:
     check_gripper_angle: true
     angle_threshold: *angle_threshold
@@ -26,7 +30,7 @@ grasp_check_dict:
     check_gripper_angle: true
     angle_threshold: *angle_threshold
 
-  mommys_helper_outler_plugs:
+  mommys_helper_outlet_plugs:
     check_gripper_angle: true
     angle_threshold: *angle_threshold
 
@@ -66,10 +70,6 @@ grasp_check_dict:
     check_gripper_angle: true
     angle_threshold: *angle_threshold
 
-  rolodex_jumbo_pencil_cup:
-    check_gripper_angle: true
-    angle_threshold: *angle_threshold
-
   first_years_take_and_toss_straw_cup:
     check_gripper_angle: false
     angle_threshold: *angle_threshold
@@ -94,3 +94,14 @@ grasp_check_dict:
     check_gripper_angle: false
     angle_threshold: *angle_threshold
 
+  dr_browns_bottle_brush:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  kong_duck_dog_toy:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  laugh_out_loud_joke_book:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold

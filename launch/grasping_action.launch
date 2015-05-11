@@ -1,6 +1,7 @@
 <launch>
 
   <rosparam command="load" file="$(find amazon_challenge_grasping)/config/grasping_param_dict.yaml" />
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/grasp_check_dict.yaml" />
 
 
   <node name="grasp_object" pkg="amazon_challenge_grasping" type="grasping_action.py" output="screen" respawn="true"/>
