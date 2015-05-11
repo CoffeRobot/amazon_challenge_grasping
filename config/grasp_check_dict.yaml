@@ -1,0 +1,96 @@
+angle_threshold: &angle_threshold 0.0
+
+grasp_check_dict:
+  
+  oreo_mega_stuf:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  champion_copper_plus_spark_plug:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+    
+  expo_dry_erase_board_eraser:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  genuine_joe_plastic_stir_sticks:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+  
+  munchkin_white_hot_duck_bath_toy:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  crayola_64_ct:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  mommys_helper_outler_plugs:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  sharpie_accent_tank_style_highlighters:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  stanley_66_052:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold  
+
+  safety_works_safety_glasses:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+  
+  cheezit_big_original:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  paper_mate_12_count_mirado_black_warrior:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  feline_greenies_dental_treats:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  elmers_washable_no_run_school_glue:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+    
+  mead_index_cards:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  rolodex_jumbo_pencil_cup:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  rolodex_jumbo_pencil_cup:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  first_years_take_and_toss_straw_cup:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  highland_6539_self_stick_notes:
+    check_gripper_angle: true
+    angle_threshold: *angle_threshold
+
+  mark_twain_huckleberry_finn:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  kyjen_squeakin_eggs_plush_puppies:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  kong_sitting_frog_dog_toy:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
+  kong_air_dog_squeakair_tennis_ball:
+    check_gripper_angle: false
+    angle_threshold: *angle_threshold
+
