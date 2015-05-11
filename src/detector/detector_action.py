@@ -181,10 +181,10 @@ class superDetector(object):
 
         detect = True
         try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
             self.torso.go()
             self.cameraSrv.call(0)
-            self.segSrv.call(1)
+            self.segSrv.call(0)
         except:
             rospy.logerr('can not move torso to detecting height')
             detect = False
@@ -198,10 +198,19 @@ class superDetector(object):
                 self.updating = False
                 self.lock.release()
                 return
+        self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
                 
         # try with kinect
         rospy.loginfo('try to update object pose with kinect')
-        self.cameraSrv.call(0)
+
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+            self.torso.go()
+            self.cameraSrv.call(0)
+        except:
+            rospy.logerr('can not move torso to detecting height')
+            detect = False
+
         if self.getSimTrackUpdate():
             self.found = True
             rospy.loginfo('object pose UPDATED')
