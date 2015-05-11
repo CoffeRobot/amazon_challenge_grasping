@@ -176,6 +176,24 @@ class superDetector(object):
 
         self.objSrv.call([self._item])
         
+        rospy.loginfo('try to update object pose with kinect')
+
+        try:
+            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+            self.torso.go()
+            self.cameraSrv.call(0)
+        except:
+            rospy.logerr('can not move torso to detecting height')
+            detect = False
+
+        if self.getSimTrackUpdate():
+            self.found = True
+            rospy.loginfo('object pose UPDATED')
+            self.simTrackUsed = True
+            self.set_status('SUCCESS')
+            self.updating = False
+            self.lock.release()
+            return
 
         rospy.loginfo('try to update object pose with point cloud segmentation')
 
@@ -201,24 +219,6 @@ class superDetector(object):
         self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
                 
         # try with kinect
-        rospy.loginfo('try to update object pose with kinect')
-
-        try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
-            self.torso.go()
-            self.cameraSrv.call(0)
-        except:
-            rospy.logerr('can not move torso to detecting height')
-            detect = False
-
-        if self.getSimTrackUpdate():
-            self.found = True
-            rospy.loginfo('object pose UPDATED')
-            self.simTrackUsed = True
-            self.set_status('SUCCESS')
-            self.updating = False
-            self.lock.release()
-            return
 
 
         rospy.loginfo('try to update object pose with left arm camera')

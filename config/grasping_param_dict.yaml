@@ -1,8 +1,8 @@
 grasping_param_dict:
-  pre_distance: -0.1
+  pre_distance: -0.2
   ft_switch: True
   lifting_height: 0.04
-  sideGraspingTrialAngles: 10
+  sideGraspingTrialAngles: 20
   sideGraspingTolerance: 30
   base_retreat_distance: 0.5
   sideGraspingTrials: 2

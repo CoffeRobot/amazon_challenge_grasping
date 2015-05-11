@@ -408,9 +408,11 @@ class BTAction(object):
         for i in range(self.sideGraspingTrialAngles):
 
             yaw_now = angle_step * i
-            y_shift_now = self.gripperWidth / 2. * (1. - math.cos(yaw_now))
+            # y_shift_now = self.gripperWidth / 2. * (1. - math.cos(yaw_now))
+            y_shift_now = self.pre_distance * math.sin(yaw_now)
             rospy.loginfo('yaw_now: %4f, y_shift_now: %4f' % (yaw_now, y_shift_now))
-            x_shift_now = y_shift_now * math.tan(y_shift_now)
+            # x_shift_now = y_shift_now * math.tan(y_shift_now)
+            x_shift_now = self.pre_distance * math.cos(yaw_now)
             '''
             PRE-GRASPING
             '''
@@ -419,7 +421,7 @@ class BTAction(object):
 
 
             rospy.logerr(yaw_now)
-            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.pre_distance - x_shift_now, -y_shift_now, 0))
+            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now, 0))
             pre_pose_robot = self.transformPoseToRobotFrame(pre_pose, planner_frame)
 
             
