@@ -10,12 +10,12 @@ import numpy
 from grasping.generate_object_dict import *
 from grasping.myTypes import *
 
-def getGraspingAxis(bin_frame, obj_frame, object_name):
+def getGraspingAxis(bin_frame, obj_frame, object_name, simtrackUsed):
 
     '''
     this function assumes everything is represented in the quaternions in the /base_link frame
     '''
-
+    object_name = object_name.strip('_scan')
     dictObj = objDict()
     objSpec = dictObj.getEntry(object_name)
 
@@ -36,9 +36,10 @@ def getGraspingAxis(bin_frame, obj_frame, object_name):
 
     tmpApproach1 = [abs(rRProj), abs(gRProj), abs(bRProj)]
 
-    for i in range(3):
-        if i in objSpec.invalidApproachAxis:
-            tmpApproach1[i] = 0
+    if simtrackUsed:
+        for i in range(3):
+            if i in objSpec.invalidApproachAxis:
+                tmpApproach1[i] = 0
 
     tmpApproach2 = [rRProj, gRProj, bRProj]
     axisApproach = tmpApproach1.index(max(tmpApproach1))
@@ -46,10 +47,12 @@ def getGraspingAxis(bin_frame, obj_frame, object_name):
 
     objAxes = [objRed, objGreen, objBlue]
     tmpGrasp1 = []
+
     for i in range(3):
-        if i == axisApproach or i in objSpec.invalidGraspAxis:
-            tmpGrasp1.append(0)
-            continue
+        if simtrackUsed:
+            if i == axisApproach or i in objSpec.invalidGraspAxis:
+                tmpGrasp1.append(0)
+                continue
         tmpGrasp1.append(kdl.dot(objAxes[i], binBlue))
 
     tmpGrasp2 = [abs(t) for t in tmpGrasp1]
@@ -62,9 +65,10 @@ def getGraspingAxis(bin_frame, obj_frame, object_name):
 
 
 
-def getGraspFrame(listener, shelf_bin, object_name):
+def getGraspFrame(listener, shelf_bin, object_name, simtrackUsed):
 
     got = False
+    
     for i in range(10):
         try:
             bin_frame = listener.lookupTransform('/base_link', shelf_bin, rospy.Time(0))
@@ -78,9 +82,9 @@ def getGraspFrame(listener, shelf_bin, object_name):
         raise Exception('getGraspFrame failed')
 
     try:
-        approchVec, approchDir, graspingVec, graspingDir = getGraspingAxis(bin_frame, obj_frame, object_name)
-    except:
-        rospy.logerr('getGraspingAxis error')
+        approchVec, approchDir, graspingVec, graspingDir = getGraspingAxis(bin_frame, obj_frame, object_name, simtrackUsed)
+    except Exception, e:
+        rospy.logerr(e)
 
     F_bin_frame = posemath.fromTf(bin_frame)
     F_obj_frame = posemath.fromTf(obj_frame)

@@ -39,7 +39,7 @@ grasp_check_dict:
     angle_threshold: *angle_threshold
 
   stanley_66_052:
-    check_gripper_angle: true
+    check_gripper_angle: false
     angle_threshold: *angle_threshold  
 
   safety_works_safety_glasses:

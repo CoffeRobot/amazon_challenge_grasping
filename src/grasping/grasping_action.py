@@ -62,6 +62,7 @@ class BTAction(object):
         while not rospy.is_shutdown():
             try:
                 self.grasping_param_dict = rospy.get_param('/grasping_param_dict')
+                self.grasp_max_effort_dict = rospy.get_param('/grasp_max_effort_dict')
                 break
             except:
                 rospy.sleep(random.uniform(0,1))
@@ -151,7 +152,7 @@ class BTAction(object):
         try:
             self.objSpec = self.dictObj.getEntry(self._item)
         except Exception, e:
-            print e
+            # print e
             self.set_status('FAILURE')
             return
 
@@ -235,7 +236,7 @@ class BTAction(object):
 
 
                 rospy.loginfo('topGraspingYaw now: %4f' % tgy)
-                tool_frame_rotation = kdl.Rotation.RPY(math.radians(self.topGraspingRoll), math.radians(tgp), tgy)
+                tool_frame_rotation = kdl.Rotation.RPY(math.radians(self.topGraspingRoll), math.radians(tgp), math.radians(tgy))
                 '''
                 PRE-GRASPING
                 '''
@@ -351,7 +352,7 @@ class BTAction(object):
                     base_pos_goal[0] -= abs(self.base_retreat_distance)
                     self.go_base_pos_async(base_pos_goal)
                 except Exception, e:
-                    rospy.logerr(e)
+                    # rospy.logerr(e)
                     self.flush()
 
                     self.open_left_gripper()
@@ -379,7 +380,7 @@ class BTAction(object):
             except:
                 try:
                     tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector_seg", rospy.Time(0))
-                    binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector", rospy.Time(0))
+                    binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector_seg", rospy.Time(0))
                     liftShift = 0.15 - binFrame[0][1]
                     rospy.loginfo('got new object pose')
                     tpRPY = self.RPYFromQuaternion(tp[1])
@@ -409,7 +410,7 @@ class BTAction(object):
 
         for i in range(self.sideGraspingTrialAngles):
 
-            yaw_now = angle_step * i
+            yaw_now = math.radians(angle_step * i)
             # y_shift_now = self.gripperWidth / 2. * (1. - math.cos(yaw_now))
             y_shift_now = self.pre_distance * math.sin(yaw_now)
             rospy.loginfo('yaw_now: %4f, y_shift_now: %4f' % (yaw_now, y_shift_now))
@@ -432,7 +433,7 @@ class BTAction(object):
                                                wait=True, tool_x_offset=self._tool_size[0])
             except Exception, e:
                 rospy.logerr('exception in PRE-GRASPING')
-                rospy.logerr(e)
+                # rospy.logerr(e)
                 continue
 
             '''
@@ -494,7 +495,7 @@ class BTAction(object):
                 base_pos_goal[0] -= abs(self.base_retreat_distance)
                 self.go_base_pos_async(base_pos_goal)
             except Exception, e:
-                rospy.logerr(e)
+                # rospy.logerr(e)
                 self.flush()
 
                 self.open_left_gripper()
@@ -553,10 +554,12 @@ class BTAction(object):
         self.r_gripper_pub.publish(ope)
 
     def close_left_gripper(self):
+        max_effort = self.grasp_max_effort_dict[self._item]
         self.go_left_gripper(0, 40)
         rospy.sleep(4)
 
     def close_right_gripper(self):
+        max_effort = self.grasp_max_effort_dict[self._item]
         self.go_right_gripper(0, 40)
         rospy.sleep(4)
 

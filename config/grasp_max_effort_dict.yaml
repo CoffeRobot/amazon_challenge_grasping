@@ -1,0 +1,54 @@
+max_effort: &max_effort 40.0
+
+grasp_max_effort_dict:
+
+  oreo_mega_stuf: 15.0
+
+  champion_copper_plus_spark_plug: *max_effort
+    
+  expo_dry_erase_board_eraser: *max_effort
+
+  genuine_joe_plastic_stir_sticks: *max_effort
+  
+  munchkin_white_hot_duck_bath_toy: *max_effort
+
+  crayola_64_ct: *max_effort
+
+  mommys_helper_outlet_plugs: *max_effort
+
+  sharpie_accent_tank_style_highlighters: *max_effort
+
+  stanley_66_052: *max_effort  
+
+  safety_works_safety_glasses: *max_effort
+  
+  cheezit_big_original: *max_effort
+
+  paper_mate_12_count_mirado_black_warrior: *max_effort
+
+  feline_greenies_dental_treats: 15.0
+
+  elmers_washable_no_run_school_glue: *max_effort
+    
+  mead_index_cards: *max_effort
+
+  rolodex_jumbo_pencil_cup: *max_effort
+
+  first_years_take_and_toss_straw_cup: *max_effort
+
+  highland_6539_self_stick_notes: *max_effort
+
+  mark_twain_huckleberry_finn: *max_effort
+
+  kyjen_squeakin_eggs_plush_puppies: *max_effort
+
+  kong_sitting_frog_dog_toy: *max_effort
+
+  kong_air_dog_squeakair_tennis_ball: *max_effort
+
+  dr_browns_bottle_brush: *max_effort
+
+  kong_duck_dog_toy: *max_effort
+
+  laugh_out_loud_joke_book: *max_effort  
+  

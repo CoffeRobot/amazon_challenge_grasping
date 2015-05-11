@@ -130,19 +130,33 @@ class superDetector(object):
         good = False
         for i in range(self.trials):
             rospy.sleep(0.01)
-            try:
-                self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item)
-                self.obsAccumulation.append(self.tp[0])
-                if len(self.obsAccumulation) == self.obsN:
-                    enough = True
-            except:
-                continue
-            if enough:
-                break
+            if self.simTrackUsed:
+                try:
+                    self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item, True)
+                    self.obsAccumulation.append(self.tp[0])
+                    if len(self.obsAccumulation) == self.obsN:
+                        enough = True
+                except:
+                    continue
+                if enough:
+                    break
+            else:
+                try:
+                    self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item + '_scan', False)
+                    self.obsAccumulation.append(self.tp[0])
+                    if len(self.obsAccumulation) == self.obsN:
+                        enough = True
+                except:
+                    rospy.logerr('cannot find frame from segmentation')
+                    continue
+                if enough:
+                    break
+
 
         if enough:
             good = self.validate()
 
+        # rospy.logerr('good: %s, enough: %s' % (good, enough))
         if good:
             return True
         else:
@@ -176,28 +190,93 @@ class superDetector(object):
 
         self.objSrv.call([self._item])
         
-        rospy.loginfo('try to update object pose with kinect')
+        # rospy.loginfo('try to update object pose with kinect')
+        # self.simTrackUsed = True
+        # detect = True
 
-        try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
-            self.torso.go()
-            self.cameraSrv.call(0)
-        except:
-            rospy.logerr('can not move torso to detecting height')
-            detect = False
+        # try:
+        #     self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+        #     self.torso.go()
+        #     self.cameraSrv.call(0)
+        # except:
+        #     rospy.logerr('can not move torso to detecting height')
+        #     detect = False
 
-        if self.getSimTrackUpdate():
-            self.found = True
-            rospy.loginfo('object pose UPDATED')
-            self.simTrackUsed = True
-            self.set_status('SUCCESS')
-            self.updating = False
-            self.lock.release()
-            return
+        # if self.getSimTrackUpdate():
+        #     self.found = True
+        #     rospy.loginfo('object pose UPDATED')
+        #     self.set_status('SUCCESS')
+        #     self.updating = False
+        #     self.lock.release()
+        #     return
+
+
+
+        # rospy.loginfo('try to update object pose with left arm camera')
+        # self.simTrackUsed = True
+        # self.cameraSrv.call(1)
+        # detect = True
+        # try:
+        #     self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+        #     self.torso.go()
+        #     self.left_arm.set_joint_value_target(self.left_arm_joint_pos_dict['detector'][self.get_row()])
+        #     self.left_arm.go(wait=True)
+        # except:
+        #     rospy.logerr('can not move left arm to detecting pose')
+        #     detect = False
+
+
+        # if detect:
+        #     if self.getSimTrackUpdate():
+        #         if self.move_arm_to_init('left_arm'):
+        #             rospy.loginfo('object pose UPDATED')
+        #             self.found = True
+        #             self.set_status('SUCCESS')
+        #         else:
+        #             self.set_status('FAILURE')
+        #         self.updating = False
+        #         self.lock.release()
+        #         return
+
+        # if not self.move_arm_to_init('left_arm'):
+        #     self.set_status("FAILURE")
+        #     return
+
+
+
+        # rospy.loginfo('try to update object pose with right arm camera')
+        # self.simTrackUsed = True
+        # self.cameraSrv.call(2)
+        # detect = True
+        # try:
+        #     self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
+        #     self.torso.go()
+        #     self.right_arm.set_joint_value_target(self.right_arm_joint_pos_dict['detector'][self.get_row()])
+        #     self.right_arm.go(wait=True)
+        # except:
+        #     rospy.logerr('can not move right arm to detecting pose')
+        #     detect = False
+
+        # if detect:
+        #     if self.getSimTrackUpdate():
+        #         if self.move_arm_to_init('right_arm'):
+        #             rospy.loginfo('object pose UPDATED')
+        #             self.found = True
+        #             self.set_status('SUCCESS')
+        #         else:
+        #             self.set_status('FAILURE')
+        #         self.updating = False
+        #         self.lock.release()
+        #         return
+
+        # if not self.move_arm_to_init('right_arm'):
+        #     self.set_status("FAILURE")
+        #     return
 
         rospy.loginfo('try to update object pose with point cloud segmentation')
 
         detect = True
+        self.simTrackUsed = False
         try:
             self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
             self.torso.go()
@@ -211,75 +290,12 @@ class superDetector(object):
             if self.getSimTrackUpdate():
                 self.found = True
                 rospy.loginfo('object pose UPDATED')
-                self.simTrackUsed = False
                 self.set_status('SUCCESS')
-                self.updating = False
-                self.lock.release()
-                return
-        self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
-                
-        # try with kinect
-
-
-        rospy.loginfo('try to update object pose with left arm camera')
-        self.cameraSrv.call(1)
-        detect = True
-        try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
-            self.torso.go()
-            self.left_arm.set_joint_value_target(self.left_arm_joint_pos_dict['detector'][self.get_row()])
-            self.left_arm.go(wait=True)
-        except:
-            rospy.logerr('can not move left arm to detecting pose')
-            detect = False
-
-
-        if detect:
-            if self.getSimTrackUpdate():
-                if self.move_arm_to_init('left_arm'):
-                    self.simTrackUsed = True
-                    rospy.loginfo('object pose UPDATED')
-                    self.found = True
-                    self.set_status('SUCCESS')
-                else:
-                    self.set_status('FAILURE')
-                self.updating = False
-                self.lock.release()
-                return
-
-        if not self.move_arm_to_init('left_arm'):
-            self.set_status("FAILURE")
-            return
-
-
-
-        rospy.loginfo('try to update object pose with right arm camera')
-        self.cameraSrv.call(2)
-        detect = True
-        try:
-            self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
-            self.torso.go()
-            self.right_arm.set_joint_value_target(self.right_arm_joint_pos_dict['detector'][self.get_row()])
-            self.right_arm.go(wait=True)
-        except:
-            rospy.logerr('can not move right arm to detecting pose')
-            detect = False
-
-        if detect:
-            if self.getSimTrackUpdate():
-                if self.move_arm_to_init('right_arm'):
-                    rospy.loginfo('object pose UPDATED')
-                    self.simTrackUsed = True
-                    self.found = True
-                    self.set_status('SUCCESS')
-                else:
-                    self.set_status('FAILURE')
-                self.updating = False
-                self.lock.release()
-                return
-
-        if not self.move_arm_to_init('right_arm'):
-            self.set_status("FAILURE")
+            else:
+                self.set_status("FAILURE")
+            self.updating = False
+            self.lock.release()
+            self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
             return
 
 

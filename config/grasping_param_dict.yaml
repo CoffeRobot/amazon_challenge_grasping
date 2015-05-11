@@ -4,7 +4,7 @@ grasping_param_dict:
   lifting_height: 0.04
   sideGraspingTrialAngles: 20
   sideGraspingTolerance: 30
-  base_retreat_distance: 0.5
+  base_retreat_distance: 0.6
   sideGraspingTrials: 2
 
   gripperWidth: 0.085
