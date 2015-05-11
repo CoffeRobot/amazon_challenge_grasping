@@ -417,8 +417,7 @@ class BTAction(object):
             # action has failed... return false
             if not self.check_gripper_angle():
                 rospy.logerr('[grasp_object]: grasping action failed')
-                self.flush()
-                return False
+                continue
 
 
             '''
