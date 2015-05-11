@@ -1,4 +1,4 @@
-angle_threshold: &angle_threshold 0.0
+angle_threshold: &angle_threshold 0.015
 
 grasp_check_dict:
   
