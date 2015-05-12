@@ -2,9 +2,10 @@ touch_shelf_test_dict:
     reach_in: 0.14
     pitch: 15
     roll: 180
-    preHeight: 0.06
+    preHeight: 0.1
     preDistance: -0.1
     trials: 20
+    ft: True
 
 
 

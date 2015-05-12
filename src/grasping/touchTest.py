@@ -137,5 +137,6 @@ if __name__ == '__main__':
     prePose = left_arm_joint_pos_dict['pregrasp'][row]
     left_arm.set_joint_value_target(prePose)
     left_arm.go(wait=True)
-    
-    touchRowBottom(torso, left_arm, row, ft = True)
+
+    touch_shelf_test_dict = rospy.get_param('/touch_shelf_test_dict')
+    touchRowBottom(torso, left_arm, row, ft = touch_shelf_test_dict['ft'])

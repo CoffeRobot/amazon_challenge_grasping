@@ -12,8 +12,10 @@ from termcolor import colored
 from geometry_msgs.msg import PoseStamped
 from select import select
 import sys
-
-
+import pickle
+from collections import namedtuple
+import rospkg
+from grasping.myTypes import *
 
 
 # assuming there is already a ros node, do not init one here
@@ -50,6 +52,19 @@ class baseScan:
         self.asyncRate = 20
         self.limitInitX = True
         self.xLimit = 0.1
+        self.emergencyThreshold = 30
+        self.emergencyTimeWindow = 60
+
+        # backup human supervised info for emergency
+        rp = rospkg.RosPack()
+        try:
+            dict_fp = rp.get_path('amazon_challenge_grasping')
+
+        except:
+            rospy.logerr('[shelf_publisher]: emergency file not found!')
+            sys.exit(1)
+        self.fileName = dict_fp + '/config/shelf_emergency.dat'
+        self.emergency = {}
 
 
     def raw_input_with_timeout(prompt, timeout=1.0):
@@ -192,12 +207,25 @@ class baseScan:
         shelfPoseMsg.header.stamp = rospy.Time.now()
         return shelfPoseMsg
 
+
+    def saveEmergency(self):
+        with open(self.fileName, 'wb') as handle:
+            pickle.dump(self.emergency, handle)
+
+    def loadEmergency(self):
+       
+        with open(self.fileName, 'rb') as handle:
+            self.emergency = pickle.load(handle)
+
+
     def publish2TF(self):
         answer = 'n'
         ask = True
         u = 0
         shelfN = 0
         recalibrateCount = 0
+        emergencyCount = 0
+
         while not rospy.is_shutdown():
             # check if human calibration is done
             shelfOri, shelfRot = self.getShelfFrame()
@@ -269,34 +297,64 @@ class baseScan:
                             continue
 
             if not self.calibrated and ask:
-                sys.stdout.write("\r [ROS time: %s] Is the current shelf pose estimation good? (y/n)" % rospy.get_time() )
-                sys.stdout.flush()
-                i, o, e = select( [sys.stdin], [], [], 1)
-                if (i):
-                    answer = sys.stdin.readline().strip()
-                else:
-                    continue
+                emergencyCount += 1
+                if emergencyCount == self.emergencyThreshold:
+                    self.loadEmergency()
+                    self.odomL = self.emergency.odomL
+                    self.odomL_rot = self.emergency.odomL_rot
+                    self.odomR = self.emergency.odomR
+                    self.odomR_rot = self.emergency.odomR_rot
+                    emergency_timestamp = self.emergency.timestamp
+                    if (rospy.Time.now() - emergency_timestamp).to_sec() > self.emergencyTimeWindow:
+                        print ''
+                        rospy.logwarn('***********************************************************************')
+                        rospy.logwarn('[shelf_publisher] NOT ABLE TO RECOVER FROM CRASHING, GAME OVER')
+                        rospy.logwarn('***********************************************************************')
+                        continue
 
-                if answer == 'y' or answer == 'yes':
-                    self.calibrated = True
                     ask = False
+                    self.calibrated = True
                     self.priorAvailable = True
                     self.priorOri_in_odom = shelf_in_odom
                     self.priorRot_in_odom = shelf_rot_in_odom
                     self.priorLeft_in_base_laser_link = legs[0]
                     self.priorRight_in_base_laser_link = legs[1]
-                    print ""
-                    rospy.loginfo("Human calibration finished")
-                    rospy.loginfo("Prior origin in /odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
-                    while not rospy.is_shutdown():
-                        try:
-                            self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
-                            self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
-                            break
-                        except:
-                            rospy.sleep(0.4)
+
+                    print ''
+                    rospy.logwarn('***********************************************************************')
+                    rospy.logwarn('[shelf_publisher] EMERGENCY RECOVERY CALLED!!!!!!!!!!!!!!!!!!!!!!')
+                    rospy.logwarn('***********************************************************************')
                 else:
-                    continue
+                    sys.stdout.write("\r [ROS time: %s] Is the current shelf pose estimation good? (y/n)" % rospy.get_time() )
+                    sys.stdout.flush()
+                    i, o, e = select( [sys.stdin], [], [], 1)
+                    if (i):
+                        answer = sys.stdin.readline().strip()
+                    else:
+                        continue
+
+                    if answer == 'y' or answer == 'yes':
+                        self.calibrated = True
+                        ask = False
+                        self.priorAvailable = True
+                        self.priorOri_in_odom = shelf_in_odom
+                        self.priorRot_in_odom = shelf_rot_in_odom
+                        self.priorLeft_in_base_laser_link = legs[0]
+                        self.priorRight_in_base_laser_link = legs[1]
+                        print ""
+                        rospy.loginfo("Human calibration finished")
+                        rospy.loginfo("Prior origin in /odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
+                        while not rospy.is_shutdown():
+                            try:
+                                self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
+                                self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
+                                break
+                            except:
+                                rospy.sleep(0.4)
+                        self.emergency = shelfInfo(self.odomL, self.odomL_rot, self.odomR, self.odomR_rot, rospy.Time.now())
+                        self.saveEmergency()
+                    else:
+                        continue
 
             
             # check in the odometry frame
@@ -359,6 +417,8 @@ class baseScan:
                             continue
 
                 if shelfN%self.asyncRate == 0:
+                    self.emergency = shelfInfo(self.odomL, self.odomL_rot, self.odomR, self.odomR_rot, rospy.Time.now())
+                    self.saveEmergency()
                     # print 'pub'
                     shelfN = 0
                     self.br.sendTransform((0, 0.1515 + self.binOffset, 1.21),
