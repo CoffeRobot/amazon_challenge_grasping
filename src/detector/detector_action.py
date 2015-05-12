@@ -147,7 +147,6 @@ class superDetector(object):
                     if len(self.obsAccumulation) == self.obsN:
                         enough = True
                 except:
-                    rospy.logerr('cannot find frame from segmentation')
                     continue
                 if enough:
                     break
@@ -181,6 +180,9 @@ class superDetector(object):
 
         return True
 
+    def emergency_callback(self, event):
+        rospy.logerr('emergency_callback is called')
+
     def receive_update(self,goal):
 
         self.lock.acquire()
@@ -188,7 +190,10 @@ class superDetector(object):
         self.updating = True
         self.found = False
 
-        self.objSrv.call([self._item])
+        # rospy.loginfo('start timing')
+        # rospy.Timer(rospy.Duration(4), self.emergency_callback, True)
+
+        print self.objSrv.call([self._item])
         
         # rospy.loginfo('try to update object pose with kinect')
         # self.simTrackUsed = True
@@ -292,6 +297,7 @@ class superDetector(object):
                 rospy.loginfo('object pose UPDATED')
                 self.set_status('SUCCESS')
             else:
+                # raw_input('wait a sec')
                 self.set_status("FAILURE")
             self.updating = False
             self.lock.release()

@@ -44,6 +44,7 @@ class baseScan:
         self.offsetXY = [-0.044, 0]
         self.binOffset = 0.02
         self.pubShelfSep = rospy.Publisher('pubShelfSep', PoseStamped)
+        self.reCalibrationCount = 4
         self.tolerance = 0.1
         self.updateRounds = 100
         self.asyncRate = 20
@@ -196,6 +197,7 @@ class baseScan:
         ask = True
         u = 0
         shelfN = 0
+        recalibrateCount = 0
         while not rospy.is_shutdown():
             # check if human calibration is done
             shelfOri, shelfRot = self.getShelfFrame()
@@ -225,7 +227,6 @@ class baseScan:
                                      "/right_leg",   \
                                      "/base_laser_link")
 
-                    self.pubShelfSep.publish(self.tf2PoseStamped(shelfOri, tf.transformations.quaternion_from_euler(0, 0, shelfRot)))
                 except:
                     continue
 
@@ -250,19 +251,22 @@ class baseScan:
                     
             if self.reCalibration and math.sqrt((shelf_in_odom[0]-self.priorOri_in_odom[0]) **2 + (shelf_in_odom[1]-self.priorOri_in_odom[1]) **2) <= self.tolerance:
                 # rospy.sleep(2)
-                rospy.loginfo('reCalibrated!')
-                u = 0
-                while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
-                    try:
-                        ######## self.priorOri_in_odom, self.priorRot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
-                        ######## self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
-                        ######## self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
-                        self.calibrated = True
-                        self.reCalibration = False
-                        rospy.loginfo("Prior origin in odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
-                        break
-                    except:
-                        continue
+                recalibrateCount += 1
+                if recalibrateCount == self.reCalibrationCount: # take recalibration only if it's stable
+                    rospy.loginfo('reCalibrated!')
+                    recalibrateCount = 0
+                    u = 0
+                    while not rospy.is_shutdown(): # make sure the odomL and odomR are updated
+                        try:
+                            ######## self.priorOri_in_odom, self.priorRot_in_odom = self.listener.lookupTransform("/odom_combined", "/shelf_frame", rospy.Time(0))
+                            ######## self.odomL, self.odomL_rot = self.listener.lookupTransform("/odom_combined", "/left_leg", rospy.Time(0))
+                            ######## self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
+                            self.calibrated = True
+                            self.reCalibration = False
+                            rospy.loginfo("Prior origin in odom_combined: X = %4f, Y = %4f" % (self.priorOri_in_odom[0], self.priorOri_in_odom[1]))
+                            break
+                        except:
+                            continue
 
             if not self.calibrated and ask:
                 sys.stdout.write("\r [ROS time: %s] Is the current shelf pose estimation good? (y/n)" % rospy.get_time() )
@@ -315,6 +319,7 @@ class baseScan:
                 shelfN += 1
                 if math.sqrt((shelf_in_odom[0] - self.priorOri_in_odom[0]) **2 + (shelf_in_odom[1] - self.priorOri_in_odom[1]) **2) > self.tolerance:
                     rospy.logwarn('something is wrong with shelf pose estimation!!!!!!!!!! RECALIBRATING')
+                    recalibrateCount = 0
                     u = 0
                     self.calibrated = False
                     self.reCalibration = True

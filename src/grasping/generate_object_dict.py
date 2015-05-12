@@ -69,17 +69,17 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kong_duck_dog_toy = objAttr('kong_duck_dog_toy', invalidApproachAxis, invalidGraspAxis, [1,0], True, 0.06)
+        kong_duck_dog_toy = objAttr('kong_duck_dog_toy', invalidApproachAxis, invalidGraspAxis, [1], True, 0.06)
         self.dict['kong_duck_dog_toy'] = kong_duck_dog_toy
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kong_sitting_frog_dog_toy = objAttr('kong_sitting_frog_dog_toy', invalidApproachAxis, invalidGraspAxis, [1,0], True, 0.06)
+        kong_sitting_frog_dog_toy = objAttr('kong_sitting_frog_dog_toy', invalidApproachAxis, invalidGraspAxis, [1], True, 0.06)
         self.dict['kong_sitting_frog_dog_toy'] = kong_sitting_frog_dog_toy
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kyjen_squeakin_eggs_plush_puppies = objAttr('kyjen_squeakin_eggs_plush_puppies', invalidApproachAxis, invalidGraspAxis, [1,0], True, 0.06)
+        kyjen_squeakin_eggs_plush_puppies = objAttr('kyjen_squeakin_eggs_plush_puppies', invalidApproachAxis, invalidGraspAxis, [1], True, 0.06)
         self.dict['kyjen_squeakin_eggs_plush_puppies'] = kyjen_squeakin_eggs_plush_puppies
 
 
@@ -95,7 +95,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [0,1], True, 0.06)
+        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [1], True, 0.06)
         self.dict['munchkin_white_hot_duck_bath_toy'] = munchkin_white_hot_duck_bath_toy
 
         invalidApproachAxis = [2]
