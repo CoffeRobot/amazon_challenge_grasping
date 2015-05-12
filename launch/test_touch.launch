@@ -1,0 +1,13 @@
+<launch>
+
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/grasping_param_dict.yaml" />
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/grasp_check_dict.yaml" />
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/grasp_max_effort_dict.yaml" />
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/touch_shelf_test_dict.yaml" />
+
+
+  <node name="touching_test" pkg="amazon_challenge_grasping" type="touchTest.py" output="screen"/>
+
+
+
+</launch>

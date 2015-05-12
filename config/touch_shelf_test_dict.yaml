@@ -1,0 +1,16 @@
+touch_shelf_test_dict:
+    reach_in: 0.14
+    pitch: 15
+    roll: 180
+    preHeight: 0.06
+    preDistance: -0.1
+    trials: 20
+
+
+
+
+    row_height:
+        row_1: 0
+        row_2: 1.27
+        row_3: 1.04
+        row_4: 0.78
