@@ -610,6 +610,8 @@ class BTAction(object):
         step_size = self.topGraspingTouchTolerance / self.topGraspingTouchSteps
 
         for i in range(1,self.topGraspingTouchSteps + 1):
+            if self._exit:
+                return False
             touching_pose.p[2] += step_size
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, touching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
