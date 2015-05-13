@@ -1,11 +1,11 @@
 grasping_param_dict:
   pre_distance: -0.2
-  ft_switch: True
   lifting_height: 0.04
   sideGraspingTrialAngles: 10
   sideGraspingTolerance: 30
   base_retreat_distance: 0.6
-  sideGraspingTrials: 2
+  sideGraspingTrials: 1
+  sideGraspingSegReach: 0.06
 
   gripperWidth: 0.085
 
@@ -19,7 +19,10 @@ grasping_param_dict:
   topGraspHeight: 0.1
   topGraspingFrame: 'base_link'
   topGraspingShakingNumber: 2
-  topGraspingReachSeg: 0.01
+  topGraspingReachSeg: 0.02
+  topGraspingTouchSteps: 10
+  topGraspingTouchTolerance: 0.02
+  topGraspingYshiftTolerance: 0.02
 
   topGraspingYawTolerance: 45
   topGraspingYawTrials: 6

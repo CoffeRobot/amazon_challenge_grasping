@@ -42,9 +42,7 @@ class BTAction(object):
         while not rospy.is_shutdown():
             try:
                 self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
-                # self.left_arm.set_planning_time(1.0)
                 self.right_arm = moveit_commander.MoveGroupCommander('right_arm')
-                # self.right_arm.set_planning_time(1.0)
                 break
             except:
                 pass
@@ -69,7 +67,6 @@ class BTAction(object):
                 continue
 
         self.pre_distance = self.grasping_param_dict['pre_distance'] # should get from grasping_dict
-        self.ft_switch = self.grasping_param_dict['ft_switch']
         self.lifting_height = self.grasping_param_dict['lifting_height']
         self.topGraspHeight = self.grasping_param_dict['topGraspHeight']
         self.topGraspingFrame = self.grasping_param_dict['topGraspingFrame']
@@ -87,9 +84,25 @@ class BTAction(object):
         self.topGraspingReachSeg = self.grasping_param_dict['topGraspingReachSeg']
         self.topGraspingYawTolerance = self.grasping_param_dict['topGraspingYawTolerance']
         self.topGraspingYawTrials = self.grasping_param_dict['topGraspingYawTrials']
+        self.sideGraspingSegReach = self.grasping_param_dict['sideGraspingSegReach']
+        self.topGraspingTouchSteps = self.grasping_param_dict['topGraspingTouchSteps']
+        self.topGraspingTouchTolerance = self.grasping_param_dict['topGraspingTouchTolerance']
+        self.topGraspingYshiftTolerance = self.grasping_param_dict['topGraspingYshiftTolerance']
         self.dictObj = objDict()
         self.objSpec = {}
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
+
+        # get ft_switch from the contest mode
+        while not rospy.is_shutdown():
+            try:
+                mode = rospy.get_param('/contest')
+                if mode:
+                    self.ft_switch = False
+                else:
+                    self.ft_switch = True
+                break
+            except:
+                pass
 
         # get base_move parameters
         while not rospy.is_shutdown():
@@ -152,11 +165,11 @@ class BTAction(object):
         try:
             self.objSpec = self.dictObj.getEntry(self._item)
         except Exception, e:
-            # print e
+            rospy.logerr('Cannot access object spec from grasp dict')
             self.set_status('FAILURE')
             return
 
-            self.pre_distance = self.objSpec.pre_distance # this is decided upon per object
+        self.pre_distance = self.objSpec.pre_distance # this is decided upon per object
         # start executing the action
         # check that preempt has not been requested by the client
         if self._as.is_preempt_requested():
@@ -228,13 +241,16 @@ class BTAction(object):
 
             for j in range(self.topGraspingYawTrials):
                 y_shift_step = 0.15 / (self.topGraspingYawTrials - 1.0)
+                reach_Y_shift_step = self.topGraspingYshiftTolerance / (self.topGraspingYawTrials - 1.0)
                 
                 if binFrame[0][1] >= 0.15:
                     tgy = self.topGraspingYawTolerance / (self.topGraspingYawTrials - 1) * j
-                    y_shift_now = -y_shift_step * j
+                    y_shift_now = - y_shift_step * j
+                    reach_Y_shift = - reach_Y_shift_step * j
                 else:
                     tgy = -self.topGraspingYawTolerance / (self.topGraspingYawTrials - 1) * j
                     y_shift_now = y_shift_step * j
+                    reach_Y_shift = reach_Y_shift_step * j
 
 
                 rospy.loginfo('topGraspingYaw now: %4f' % tgy)
@@ -250,7 +266,6 @@ class BTAction(object):
                     pr2_moveit_utils.go_tool_frame(self.left_arm, pre_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                    wait=True, tool_x_offset=self._tool_size[0])
                 except:
-                    self.flush()
                     rospy.logerr('exception in PRE-GRASPING')
                     continue
 
@@ -259,15 +274,14 @@ class BTAction(object):
                 REACHING
                 '''
                 if self.poseFromSimtrack:
-                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1], tp[0][2] + self.topGraspHeight))
+                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + reach_Y_shift, tp[0][2] + self.topGraspHeight))
                 else:
-                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1], tp[0][2] + self.topGraspHeight))
+                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift, tp[0][2] + self.topGraspHeight))
                
                 try:
                     pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                    wait=True, tool_x_offset=self._tool_size[0])
                 except:
-                    self.flush()
                     rospy.logerr('exception in REACHING')
                     continue
 
@@ -278,18 +292,20 @@ class BTAction(object):
                 row_height = self.grasping_param_dict['row_height'][self.get_row()]
                 touching_height = max(tp[0][2], row_height)
                 if self.poseFromSimtrack:
-                    touching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1], touching_height))
+                    touching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + reach_Y_shift, touching_height))
                 else:
-                    touching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1], touching_height))
+                    touching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift, touching_height))
                 rospy.loginfo("touching_height: %4f" % touching_height)
                 
                 try:
                     pr2_moveit_utils.go_tool_frame(self.left_arm, touching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                    wait=True, tool_x_offset=self._tool_size[0])
                 except:
-                    self.flush()
-                    rospy.logerr('exception in TOUCHING')
-                    continue
+                    if not self.iterative_touch(touching_pose):
+                        rospy.logerr('exception in TOUCHING')
+                        continue
+                    else:
+                        pass
 
                 '''
                 SMART-SHAKING
@@ -307,14 +323,12 @@ class BTAction(object):
                         pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose1, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                        wait=True, tool_x_offset=self._tool_size[0])
                     except:
-                        self.flush()
                         rospy.logerr('exception in SMART-SHAKING 1, never mind')
 
                     try:
                         pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose2, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                        wait=True, tool_x_offset=self._tool_size[0])
                     except:
-                        self.flush()
                         rospy.logerr('exception in SMART-SHAKING 2, never mind')
 
 
@@ -336,7 +350,6 @@ class BTAction(object):
                     pr2_moveit_utils.go_tool_frame(self.left_arm, lifting_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                    wait=True, tool_x_offset=self._tool_size[0])
                 except:
-                    self.flush()
                     self.open_left_gripper()
                     rospy.logerr('exception in LIFTING')
                     continue
@@ -354,9 +367,6 @@ class BTAction(object):
                     base_pos_goal[0] -= abs(self.base_retreat_distance)
                     self.go_base_pos_async(base_pos_goal)
                 except Exception, e:
-                    # rospy.logerr(e)
-                    self.flush()
-
                     self.open_left_gripper()
 
                     rospy.logerr('exception in RETREATING')
@@ -397,8 +407,8 @@ class BTAction(object):
         self.open_left_gripper()
         row_height = self.grasping_param_dict['row_height'][self.get_row()]
         
-        # if tp[0][2] - row_height < 0.04:
-        #     return False
+        if tp[0][2] - row_height < 0.04:
+            return False
 
         if abs(objBinRPY[1]) > 0.5:
             rospy.logerr('require pushing the object')
@@ -415,10 +425,8 @@ class BTAction(object):
         for i in range(self.sideGraspingTrialAngles):
 
             yaw_now = math.radians(angle_step * i)
-            # y_shift_now = self.gripperWidth / 2. * (1. - math.cos(yaw_now))
             y_shift_now = self.pre_distance * math.sin(yaw_now)
             rospy.loginfo('yaw_now: %4f, y_shift_now: %4f' % (yaw_now, y_shift_now))
-            # x_shift_now = y_shift_now * math.tan(y_shift_now)
             x_shift_now = self.pre_distance * math.cos(yaw_now)
             '''
             PRE-GRASPING
@@ -436,19 +444,18 @@ class BTAction(object):
                                                wait=True, tool_x_offset=self._tool_size[0])
             except Exception, e:
                 rospy.logerr('exception in PRE-GRASPING')
-                # rospy.logerr(e)
                 continue
 
             '''
             REACHING
             '''
             rospy.loginfo('REACHING')
-            reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( 0.0,0.0,0))
-            # reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( 0.0,y_shift_now,0))
-
-            reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
-
-        
+            if self.poseFromSimtrack:
+                reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( 0.0, 0.0, 0))
+                reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
+            else:
+                reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach, 0.0, 0))
+                reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose_robot.pose, base_frame_id = reaching_pose_robot.header.frame_id, ft=self.ft_switch,
                                                wait=True, tool_x_offset=self._tool_size[0])
@@ -520,6 +527,25 @@ class BTAction(object):
         return False
 
 
+
+    def iterative_touch(self, touching_pose):
+        '''
+        Warning: this function now works for only left_arm
+        '''
+        step_size = self.topGraspingTouchTolerance / self.topGraspingTouchSteps
+
+        for i in range(1,self.topGraspingTouchSteps + 1):
+            touching_pose.p[2] += step_size
+            try:
+                pr2_moveit_utils.go_tool_frame(self.left_arm, touching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
+                                                       wait=True, tool_x_offset=self._tool_size[0])
+                return True
+            except:
+                pass
+        return False
+
+
+
     def set_status(self, status):
         if status == 'SUCCESS':
             self._feedback.status = 1
@@ -535,6 +561,7 @@ class BTAction(object):
             rospy.logerr('Action %s: has a wrong return status' % self._action_name)
 
     def get_task(self, msg):
+        self.flush()
         text = msg.data
         text = text.replace('[','')
         text = text.replace(']','')

@@ -140,3 +140,4 @@ if __name__ == '__main__':
 
     touch_shelf_test_dict = rospy.get_param('/touch_shelf_test_dict')
     touchRowBottom(torso, left_arm, row, ft = touch_shelf_test_dict['ft'])
+    rospy.spin()
