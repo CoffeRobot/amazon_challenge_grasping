@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="sim" default="false"/>
+  <arg name="timeout" default="120.0"/>
 
 
   <include file="$(find vision)/launch/laser_assembler.launch" />
@@ -8,7 +9,9 @@
   <node name="object_segmentation_node" pkg="vision" type="object_segmentation_node" output="screen" respawn="true"/>
   <node name="periodic_cloud_aggregator" pkg="vision" type="periodic_cloud_aggregator" output="screen" respawn="true"/>
 
-  <node name="amazon_detector" pkg="amazon_challenge_grasping" type="detector_action.py" output="screen" respawn="true"/>
+  <node name="amazon_detector" pkg="amazon_challenge_grasping" type="detector_action.py" output="screen" respawn="true">
+    <param name="timeout" value="$(arg timeout)"/>
+  </node>
 
   <group if="$(arg sim)">
     <node name="action_client" pkg="amazon_challenge_bt_actions" type="ActionClient" output="screen">
