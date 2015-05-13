@@ -47,6 +47,7 @@ class superDetector(object):
         self.vThresh = 0.1
         self.updating = False
         self.lock = threading.Lock()
+        self.preempted = False
         
         self.get_services()
         
@@ -118,7 +119,6 @@ class superDetector(object):
     def my_pub(self):
 
         # publish info to the console for the user
-        rospy.loginfo('Starting Detecting')
         r = rospy.Rate(2.0)
 
 
@@ -217,6 +217,7 @@ class superDetector(object):
         return True
 
     def timer_callback(self, event):
+        self.preempted = True
         rospy.logerr('[' + rospy.get_name() + ']: TIMED OUT!')
 
         # pull the base back 60 cm
@@ -249,10 +250,14 @@ class superDetector(object):
 
         return False
 
-    def emergency_callback(self, event):
-        rospy.logerr('emergency_callback is called')
+    def setFailureOnExit(self):
+        while not self._exit:
+            rospy.sleep(0.4)
+        self.set_status('FAILURE')
+
 
     def receive_update(self,goal):
+        self.preempted = False
         self._exit = False
         self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
 
@@ -297,7 +302,10 @@ class superDetector(object):
             if self.getSimTrackUpdate():
                 self.found = True
                 rospy.loginfo('object pose UPDATED')
-                self.set_status('SUCCESS')
+                if not self.preempted:
+                    self.set_status('SUCCESS')
+                else:
+                    self.setFailureOnExit()
                 self.updating = False
                 self.lock.release()
                 self.timer.shutdown()
@@ -331,17 +339,27 @@ class superDetector(object):
                     if self.move_arm_to_init('left_arm'):
                         rospy.loginfo('object pose UPDATED')
                         self.found = True
-                        self.set_status('SUCCESS')
+                        if not self.preempted:
+                            self.set_status('SUCCESS')
+                        else:
+                            self.setFailureOnExit()
                     else:
-                        self.set_status('FAILURE')
+                        if not self.preempted:
+                            self.set_status('FAILURE')
+                        else:
+                            self.setFailureOnExit()
                     self.updating = False
                     self.lock.release()
                     self.timer.shutdown()
                     return
 
             if not self.move_arm_to_init('left_arm'):
-                self.set_status("FAILURE")
+                if not self.preempted:
+                    self.set_status('FAILURE')
+                else:
+                    self.setFailureOnExit()
                 self.timer.shutdown()
+                self.lock.release()
                 return
 
 
@@ -372,17 +390,27 @@ class superDetector(object):
                     if self.move_arm_to_init('right_arm'):
                         rospy.loginfo('object pose UPDATED')
                         self.found = True
-                        self.set_status('SUCCESS')
+                        if not self.preempted:
+                            self.set_status('SUCCESS')
+                        else:
+                            self.setFailureOnExit()
                     else:
-                        self.set_status('FAILURE')
+                        if not self.preempted:
+                            self.set_status('FAILURE')
+                        else:
+                            self.setFailureOnExit()
                     self.updating = False
                     self.lock.release()
                     self.timer.shutdown()
                     return
 
             if not self.move_arm_to_init('right_arm'):
-                self.set_status("FAILURE")
+                if not self.preempted:
+                    self.set_status('FAILURE')
+                else:
+                    self.setFailureOnExit()
                 self.timer.shutdown()
+                self.lock.release()
                 return
 
             if self.execute_exit():
@@ -409,9 +437,15 @@ class superDetector(object):
             if self.getSimTrackUpdate():
                 self.found = True
                 rospy.loginfo('object pose UPDATED')
-                self.set_status('SUCCESS')
+                if not self.preempted:
+                    self.set_status('SUCCESS')
+                else:
+                    self.setFailureOnExit()
             else:
-                self.set_status("FAILURE")
+                if not self.preempted:
+                    self.set_status('FAILURE')
+                else:
+                    self.setFailureOnExit()
             self.updating = False
             if not self.get_services():
                 if self.execute_exit():
@@ -426,9 +460,13 @@ class superDetector(object):
         
 
         rospy.loginfo('object pose CANNOT be UPDATED')
-        self.set_status('FAILURE')
+        if not self.preempted:
+            self.set_status('FAILURE')
+        else:
+            self.setFailureOnExit()
         self.updating = False
         self.lock.release()
+        self.timer.shutdown()
         return
 
 
