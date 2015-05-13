@@ -20,6 +20,7 @@ from simtrack_nodes.srv import *
 from vision.srv import StartAggregator
 import random
 from grasping.generate_object_dict import *
+from calibrateBase import baseMove
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
@@ -32,7 +33,8 @@ class superDetector(object):
         self._as = actionlib.SimpleActionServer(self._action_name, amazon_challenge_bt_actions.msg.BTAction,\
             execute_cb=self.receive_update, auto_start = False)
 
-        self._as.start()
+        # self._as.start()
+        self._exit = False
         self.pub_rate = rospy.Rate(50)
         self.listener = tf.TransformListener()
         rospy.Subscriber("/amazon_next_task", String, self.get_task)
@@ -45,12 +47,9 @@ class superDetector(object):
         self.vThresh = 0.1
         self.updating = False
         self.lock = threading.Lock()
-        rospy.wait_for_service('/simtrack/tracker_switch_camera', 10)
-        self.cameraSrv = rospy.ServiceProxy('/simtrack/tracker_switch_camera', SwitchCamera)
-        rospy.wait_for_service('/simtrack/tracker_switch_objects', 10)
-        self.objSrv = rospy.ServiceProxy('/simtrack/tracker_switch_objects', SwitchObjects)
-        rospy.wait_for_service('/aggregate_cloud', 10)
-        self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
+        
+        self.get_services()
+        
         self.simTrackUsed = True
         self.found = False
 
@@ -59,24 +58,59 @@ class superDetector(object):
                 self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
                 self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
                 self.torso_joint_pos_dict = rospy.get_param('/torso_joint_pos_dict')
+                self._timeout = rospy.get_param(rospy.get_name() + '/timeout')
+                base_move_params = rospy.get_param('/base_move')
+                self.base_pos_dict = rospy.get_param('/base_pos_dict')
                 self.dictObj = objDict()
                 break
             except:
-                rospy.sleep(random.uniform(0,1))
+                rospy.sleep(random.uniform(0,2))
                 continue
+
+        self._bm = baseMove.baseMove(verbose=False)
+        self._bm.setPosTolerance(base_move_params['pos_tolerance'])
+        self._bm.setAngTolerance(base_move_params['ang_tolerance'])
+        self._bm.setLinearGain(base_move_params['linear_gain'])
+        self._bm.setAngularGain(base_move_params['angular_gain'])
 
         while not rospy.is_shutdown():
             try:
                 self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
                 self.right_arm = moveit_commander.MoveGroupCommander('right_arm')
                 self.torso = moveit_commander.MoveGroupCommander('torso')
+                self._arms = moveit_commander.MoveGroupCommander('arms')
                 break
             except:
                 pass
 
+        self._as.start()
+        rospy.loginfo('SuperDetector ready')
+
     def flush(self):
         self._item = ""
         self._bin = ""
+
+    def get_services(self):
+        while not rospy.is_shutdown():
+
+            if self._exit:
+                return False
+
+            try:
+                rospy.wait_for_service('/simtrack/tracker_switch_camera', 1.0)
+                rospy.wait_for_service('/simtrack/tracker_switch_objects', 1.0)
+                rospy.wait_for_service('/aggregate_cloud', 1.0)
+                break
+            except:
+                rospy.loginfo('[detector]: waiting for simtrack and segmentation services')
+                pass
+
+
+        self.cameraSrv = rospy.ServiceProxy('/simtrack/tracker_switch_camera', SwitchCamera)
+        self.objSrv = rospy.ServiceProxy('/simtrack/tracker_switch_objects', SwitchObjects)
+        self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
+
+        return True
 
 
 
@@ -85,9 +119,11 @@ class superDetector(object):
 
         # publish info to the console for the user
         rospy.loginfo('Starting Detecting')
+        r = rospy.Rate(2.0)
 
 
         while not rospy.is_shutdown():
+            r.sleep()
             if self.updating:
                 continue
             if not self.found:
@@ -100,7 +136,6 @@ class superDetector(object):
                     self.br.sendTransform(self.tp[0], self.tp[1], rospy.Time.now(),\
                                              "/" + self._item + "_detector",   \
                                              '/' + 'shelf_' + self._bin)
-                    self.pub_rate.sleep()
                 except:
                     continue
             else:
@@ -108,7 +143,6 @@ class superDetector(object):
                     self.br.sendTransform(self.tp[0], self.tp[1], rospy.Time.now(),\
                                              "/" + self._item + "_detector_seg",   \
                                              '/' + 'shelf_' + self._bin)
-                    self.pub_rate.sleep()
                 except:
                     continue
 
@@ -130,7 +164,9 @@ class superDetector(object):
         enough = False
         good = False
         for i in range(self.trials):
-            rospy.sleep(0.01)
+            if self._exit:
+                 self._success = False
+                 return False
             if self.simTrackUsed:
                 try:
                     self.tp = grasping_lib.getGraspFrame(self.listener, '/' + 'shelf_' + self._bin, '/' + self._item, True)
@@ -156,7 +192,6 @@ class superDetector(object):
         if enough:
             good = self.validate()
 
-        # rospy.logerr('good: %s, enough: %s' % (good, enough))
         if good:
             return True
         else:
@@ -181,21 +216,61 @@ class superDetector(object):
 
         return True
 
+    def timer_callback(self, event):
+        rospy.logerr('[' + rospy.get_name() + ']: TIMED OUT!')
+
+        # pull the base back 60 cm
+
+        self.left_arm.stop()
+        self.right_arm.stop()
+
+        base_pos_goal = [-1.42, self._bm.trans[1], self._bm.trans[2], 0.0, 0.0, 0.0]
+
+        self._bm.goAngle(base_pos_goal[5])
+        self._bm.goPosition(base_pos_goal[0:2])
+        self._bm.goAngle(base_pos_goal[5])
+
+        left_arm_joint_pos_goal = self.left_arm_joint_pos_dict['start']
+        right_arm_joint_pos_goal = self.right_arm_joint_pos_dict['start']
+
+        joint_pos_goal = left_arm_joint_pos_goal + right_arm_joint_pos_goal
+
+        self._arms.set_joint_value_target(joint_pos_goal)
+        self._arms.go()
+        self._exit = True
+
+    def execute_exit(self):
+        if self._exit:
+            self._success = False
+            self.timer.shutdown()
+            self.lock.release()
+            self.set_status("FAILURE")
+            return True
+
+        return False
+
     def emergency_callback(self, event):
         rospy.logerr('emergency_callback is called')
 
     def receive_update(self,goal):
+        self._exit = False
+        self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
 
         self.lock.acquire()
         rospy.loginfo('Goal Received')
         self.updating = True
         self.found = False
 
+
         try:
             objSpec = self.dictObj.getEntry(self._item)
             simtrackEnabled = objSpec.simtrack
         except:
             simtrackEnabled = True
+
+        if not self.get_services():
+            if self.execute_exit():
+                return
 
         self.objSrv.call([self._item])
 
@@ -204,6 +279,9 @@ class superDetector(object):
             self.simTrackUsed = True
             detect = True
 
+            if not self.get_services():
+                if self.execute_exit():
+                    return
             try:
                 self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
                 self.torso.go()
@@ -212,12 +290,17 @@ class superDetector(object):
                 rospy.logerr('can not move torso to detecting height')
                 detect = False
 
+            if self.execute_exit():
+                return
+
+
             if self.getSimTrackUpdate():
                 self.found = True
                 rospy.loginfo('object pose UPDATED')
                 self.set_status('SUCCESS')
                 self.updating = False
                 self.lock.release()
+                self.timer.shutdown()
                 return
 
 
@@ -226,6 +309,11 @@ class superDetector(object):
             self.simTrackUsed = True
             self.cameraSrv.call(1)
             detect = True
+
+            if not self.get_services():
+                if self.execute_exit():
+                    return
+
             try:
                 self.torso.set_joint_value_target(self.torso_joint_pos_dict['detector'][self.get_row()])
                 self.torso.go()
@@ -235,6 +323,8 @@ class superDetector(object):
                 rospy.logerr('can not move left arm to detecting pose')
                 detect = False
 
+            if self.execute_exit():
+                return
 
             if detect:
                 if self.getSimTrackUpdate():
@@ -246,16 +336,23 @@ class superDetector(object):
                         self.set_status('FAILURE')
                     self.updating = False
                     self.lock.release()
+                    self.timer.shutdown()
                     return
 
             if not self.move_arm_to_init('left_arm'):
                 self.set_status("FAILURE")
+                self.timer.shutdown()
                 return
 
 
 
             rospy.loginfo('try to update object pose with right arm camera')
             self.simTrackUsed = True
+
+            if not self.get_services():
+                if self.execute_exit():
+                    return
+
             self.cameraSrv.call(2)
             detect = True
             try:
@@ -267,6 +364,9 @@ class superDetector(object):
                 rospy.logerr('can not move right arm to detecting pose')
                 detect = False
 
+            if self.execute_exit():
+                    return
+
             if detect:
                 if self.getSimTrackUpdate():
                     if self.move_arm_to_init('right_arm'):
@@ -277,16 +377,25 @@ class superDetector(object):
                         self.set_status('FAILURE')
                     self.updating = False
                     self.lock.release()
+                    self.timer.shutdown()
                     return
 
             if not self.move_arm_to_init('right_arm'):
                 self.set_status("FAILURE")
+                self.timer.shutdown()
                 return
+
+            if self.execute_exit():
+                    return
 
         rospy.loginfo('try to update object pose with point cloud segmentation')
 
         detect = True
         self.simTrackUsed = False
+
+        if not self.get_services():
+            if self.execute_exit():
+                return
         try:
             self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
             self.torso.go()
@@ -304,8 +413,12 @@ class superDetector(object):
             else:
                 self.set_status("FAILURE")
             self.updating = False
-            self.lock.release()
+            if not self.get_services():
+                if self.execute_exit():
+                    return
             self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
+            self.timer.shutdown()
+            self.lock.release()
             return
 
 
