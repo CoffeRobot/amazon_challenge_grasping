@@ -33,7 +33,6 @@ class BTAction(object):
         self._action_name = name
         self._as = actionlib.SimpleActionServer(self._action_name, amazon_challenge_bt_actions.msg.BTAction,
                                                 execute_cb=self.execute_cb, auto_start=False)
-        self._as.start()
         self.pub_grasped = rospy.Publisher('object_grasped', String)
         self.pub_pose = rospy.Publisher('hand_pose', PoseStamped)
         self.pub_rate = rospy.Rate(30)
@@ -43,6 +42,8 @@ class BTAction(object):
             try:
                 self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
                 self.right_arm = moveit_commander.MoveGroupCommander('right_arm')
+                self._arms = moveit_commander.MoveGroupCommander('arms')
+
                 break
             except:
                 pass
@@ -63,7 +64,7 @@ class BTAction(object):
                 self.grasp_max_effort_dict = rospy.get_param('/grasp_max_effort_dict')
                 break
             except:
-                rospy.sleep(random.uniform(0,1))
+                rospy.sleep(random.uniform(0,2))
                 continue
 
         self.pre_distance = self.grasping_param_dict['pre_distance'] # should get from grasping_dict
@@ -102,6 +103,7 @@ class BTAction(object):
                     self.ft_switch = True
                 break
             except:
+                rospy.sleep(random.uniform(0,1))
                 pass
 
         # get base_move parameters
@@ -110,6 +112,7 @@ class BTAction(object):
                 base_move_params = rospy.get_param('/base_move')
                 self.base_pos_dict = rospy.get_param('/base_pos_dict')
                 self.grasp_check_dict = rospy.get_param('/grasp_check_dict')
+                self._timeout = rospy.get_param(rospy.get_name() + '/timeout')
                 break
             except:
                 rospy.sleep(random.uniform(0,1))
@@ -128,6 +131,7 @@ class BTAction(object):
             except:
                 rospy.sleep(random.uniform(0,1))
                 continue
+        self._as.start()
         rospy.loginfo('Grapsing action ready')
 
     def flush(self):
@@ -142,24 +146,61 @@ class BTAction(object):
         pre_pose_stamped.header.stamp = rospy.Time()
         pre_pose_stamped.header.frame_id = planner_frame
 
-        while not rospy.is_shutdown():
+        r = rospy.Rate(1.0)
+        while not rospy.is_shutdown() and not self._exit:
+
             try:
                 robotPose = self.listener.transformPose('/base_link', pre_pose_stamped)
                 break
             except:
+                r.sleep()
                 pass
 
         self.pub_pose.publish(robotPose)
         return robotPose
 
 
+
     def RPYFromQuaternion(self, q):
         return tf.transformations.euler_from_quaternion([q[0], q[1], q[2], q[3]])
 
 
+    def timer_callback(self, event):
+        rospy.logerr('[' + rospy.get_name() + ']: TIMED OUT!')
 
+        # pull the base back 60 cm
+
+        self.left_arm.stop()
+        self.right_arm.stop()
+
+        base_pos_goal = [-1.42, self._bm.trans[1], self._bm.trans[2], 0.0, 0.0, 0.0]
+
+        self._bm.goAngle(base_pos_goal[5])
+        self._bm.goPosition(base_pos_goal[0:2])
+        self._bm.goAngle(base_pos_goal[5])
+
+        left_arm_joint_pos_goal = self.left_arm_joint_pos_dict['start']
+        right_arm_joint_pos_goal = self.right_arm_joint_pos_dict['start']
+
+        joint_pos_goal = left_arm_joint_pos_goal + right_arm_joint_pos_goal
+
+        self._arms.set_joint_value_target(joint_pos_goal)
+        self._arms.go()
+        self._exit = True
+
+    def execute_exit(self):
+        if self._exit:
+            self._success = False
+            self.timer.shutdown()
+            self.set_status("FAILURE")
+            return True
+
+        return False
 
     def execute_cb(self, goal):
+        self._exit = False
+        self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
+
         # publish info to the console for the user
         rospy.loginfo('Starting Grasping')
         try:
@@ -167,6 +208,7 @@ class BTAction(object):
         except Exception, e:
             rospy.logerr('Cannot access object spec from grasp dict')
             self.set_status('FAILURE')
+            self.timer.shutdown()
             return
 
         self.pre_distance = self.objSpec.pre_distance # this is decided upon per object
@@ -175,6 +217,7 @@ class BTAction(object):
         if self._as.is_preempt_requested():
             rospy.loginfo('Action Halted')
             self._as.set_preempted()
+            self.timer.shutdown()
             return
 
         rospy.loginfo('Executing Grasping')
@@ -186,6 +229,8 @@ class BTAction(object):
                     status = self.sideGrasping()
                     if status:
                         break
+                    if self.execute_exit():
+                        return
                 if status:
                     break
             elif gs == 1:
@@ -194,6 +239,8 @@ class BTAction(object):
                     status = self.topGrasping()
                     if status:
                         break
+                    if self.execute_exit():
+                        return
                 if status:
                     break
             else:
@@ -205,13 +252,17 @@ class BTAction(object):
             self.set_status('SUCCESS')
         else:
             self.set_status('FAILURE')
+        self.timer.shutdown()
         return
 
 
     def topGrasping(self):
 
-
+        r = rospy.Rate(1.0)
         while not rospy.is_shutdown():
+
+            if self._exit:
+                return False
             try:
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
                 binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector", rospy.Time(0))
@@ -230,16 +281,24 @@ class BTAction(object):
                     self.poseFromSimtrack = False
                     break
                 except:
+                    r.sleep()
                     continue
         self.open_left_gripper()
 
-
+        if self._exit:
+            return False
 
         for i in range(self.topGraspingPitchTrials):
+
+            if self._exit:
+                return False
+
             tgp = self.topGraspingPitch - self.topGraspingPitchTolerance / (self.topGraspingPitchTrials - 1) * i
             rospy.loginfo('topGraspingPitch now: %4f' % tgp)
 
             for j in range(self.topGraspingYawTrials):
+                if self._exit:
+                    return False
                 y_shift_step = 0.15 / (self.topGraspingYawTrials - 1.0)
                 reach_Y_shift_step = self.topGraspingYshiftTolerance / (self.topGraspingYawTrials - 1.0)
                 
@@ -319,6 +378,8 @@ class BTAction(object):
                     shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] - 0.01, touching_height))
                 
                 for i in range(self.topGraspingShakingNumber):
+                    if self._exit:
+                        return False
                     try:
                         pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose1, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                        wait=True, tool_x_offset=self._tool_size[0])
@@ -379,7 +440,11 @@ class BTAction(object):
 
     def sideGrasping(self):
 
+        r = rospy.Rate(1.0)
         while not rospy.is_shutdown():
+
+            if self._exit:
+                return False
             try:
                 tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector", rospy.Time(0))
                 binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector", rospy.Time(0))
@@ -402,6 +467,7 @@ class BTAction(object):
                     self.poseFromSimtrack = False
                     break
                 except:
+                    r.sleep()
                     continue
 
         self.open_left_gripper()
@@ -424,6 +490,9 @@ class BTAction(object):
 
         for i in range(self.sideGraspingTrialAngles):
 
+            if self._exit:
+                return False
+
             yaw_now = math.radians(angle_step * i)
             y_shift_now = self.pre_distance * math.sin(yaw_now)
             rospy.loginfo('yaw_now: %4f, y_shift_now: %4f' % (yaw_now, y_shift_now))
@@ -438,7 +507,9 @@ class BTAction(object):
             pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now, 0))
             pre_pose_robot = self.transformPoseToRobotFrame(pre_pose, planner_frame)
 
-            
+            if self._exit:
+                return False
+
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, pre_pose_robot.pose, base_frame_id = pre_pose_robot.header.frame_id, ft=self.ft_switch,
                                                wait=True, tool_x_offset=self._tool_size[0])
@@ -456,6 +527,10 @@ class BTAction(object):
             else:
                 reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach, 0.0, 0))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
+
+            if self._exit:
+                return False
+
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose_robot.pose, base_frame_id = reaching_pose_robot.header.frame_id, ft=self.ft_switch,
                                                wait=True, tool_x_offset=self._tool_size[0])
@@ -535,6 +610,8 @@ class BTAction(object):
         step_size = self.topGraspingTouchTolerance / self.topGraspingTouchSteps
 
         for i in range(1,self.topGraspingTouchSteps + 1):
+            if self._exit:
+                return False
             touching_pose.p[2] += step_size
             try:
                 pr2_moveit_utils.go_tool_frame(self.left_arm, touching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
