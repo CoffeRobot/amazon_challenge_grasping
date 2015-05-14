@@ -15,7 +15,8 @@ def getGraspingAxis(bin_frame, obj_frame, object_name, simtrackUsed):
     '''
     this function assumes everything is represented in the quaternions in the /base_link frame
     '''
-    object_name = object_name.strip('_scan')
+    if object_name.endswith('_scan'):
+        object_name = object_name[:-5]
     dictObj = objDict()
     objSpec = dictObj.getEntry(object_name)
 
