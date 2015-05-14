@@ -251,12 +251,15 @@ class superDetector(object):
         return False
 
     def setFailureOnExit(self):
+        self._failure_on_exit = True
         while not self._exit:
             rospy.sleep(0.4)
         self.set_status('FAILURE')
 
 
+
     def receive_update(self,goal):
+        self._failure_on_exit=False
         self.preempted = False
         self._exit = False
         self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
@@ -383,7 +386,7 @@ class superDetector(object):
                 detect = False
 
             if self.execute_exit():
-                    return
+                return
 
             if detect:
                 if self.getSimTrackUpdate():
@@ -414,7 +417,7 @@ class superDetector(object):
                 return
 
             if self.execute_exit():
-                    return
+                return
 
         rospy.loginfo('try to update object pose with point cloud segmentation')
 
@@ -447,7 +450,7 @@ class superDetector(object):
                 else:
                     self.setFailureOnExit()
             self.updating = False
-            if not self.get_services():
+            if not self.get_services() and not self._failure_on_exit:
                 if self.execute_exit():
                     return
             self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
