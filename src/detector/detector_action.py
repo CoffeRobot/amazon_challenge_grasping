@@ -98,8 +98,8 @@ class superDetector(object):
                 return False
 
             try:
-                rospy.wait_for_service('/simtrack/tracker_switch_camera', 1.0)
-                rospy.wait_for_service('/simtrack/tracker_switch_objects', 1.0)
+                rospy.wait_for_service('/simtrack/switch_camera', 1.0)
+                rospy.wait_for_service('/simtrack/switch_objects', 1.0)
                 rospy.wait_for_service('/aggregate_cloud', 1.0)
                 break
             except:
