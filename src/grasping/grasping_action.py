@@ -111,6 +111,8 @@ class BTAction(object):
             try:
                 base_move_params = rospy.get_param('/base_move')
                 self.base_pos_dict = rospy.get_param('/base_pos_dict')
+                self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
+                self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
                 self.grasp_check_dict = rospy.get_param('/grasp_check_dict')
                 self._timeout = rospy.get_param(rospy.get_name() + '/timeout')
                 break
