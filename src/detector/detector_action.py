@@ -107,8 +107,8 @@ class superDetector(object):
                 pass
 
 
-        self.cameraSrv = rospy.ServiceProxy('/simtrack/tracker_switch_camera', SwitchCamera)
-        self.objSrv = rospy.ServiceProxy('/simtrack/tracker_switch_objects', SwitchObjects)
+        self.cameraSrv = rospy.ServiceProxy('/simtrack/switch_camera', SwitchCamera)
+        self.objSrv = rospy.ServiceProxy('/simtrack/switch_objects', SwitchObjects)
         self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
 
         return True
