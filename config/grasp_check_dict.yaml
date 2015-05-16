@@ -59,7 +59,7 @@ grasp_check_dict:
     angle_threshold: *angle_threshold
 
   elmers_washable_no_run_school_glue:
-    check_gripper_angle: true
+    check_gripper_angle: false
     angle_threshold: *angle_threshold
     
   mead_index_cards:
