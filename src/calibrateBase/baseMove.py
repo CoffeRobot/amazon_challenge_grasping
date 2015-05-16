@@ -26,8 +26,8 @@ class baseMove:
         self.linearGain = 10
         self.angularGain = 10
         self.comm = rospy.Rate(20)
-        self.linearTwistBound = twistBound(0.04, 0.07)
-        self.angularTwistBound = twistBound(0.06, 0.2)
+        self.linearTwistBound = twistBound(0.04, 0.15)
+        self.angularTwistBound = twistBound(0.06, 0.3)
         self.refFrame = '/shelf_frame'
         rospy.Subscriber("pubShelfSep", PoseStamped, self.updateShelfPose)
         self.trans = (0,0,0)

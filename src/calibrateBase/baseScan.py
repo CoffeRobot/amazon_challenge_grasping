@@ -47,7 +47,7 @@ class baseScan:
         self.binOffset = 0.02
         self.pubShelfSep = rospy.Publisher('pubShelfSep', PoseStamped)
         self.reCalibrationCount = 4
-        self.tolerance = 0.1
+        self.tolerance = 0.3
         self.updateRounds = 100
         self.asyncRate = 20
         self.limitInitX = True
