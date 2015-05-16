@@ -687,7 +687,7 @@ class BTAction(object):
 
         angle = base_pos_goal[5]
         pos = base_pos_goal[0:2]
-        r = rospy.Rate(100.0)
+        r = rospy.Rate(20.0)
 
         # check for preemption while the base hasn't reach goal configuration
         while not self._bm.goAngle(angle) and not rospy.is_shutdown():
