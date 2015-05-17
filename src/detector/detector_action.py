@@ -312,9 +312,11 @@ class superDetector(object):
                 if self.execute_exit():
                     self.del_bm_moveit()
                     return
+
             try:
-                self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
-                self.torso.go()
+                # this is now taken care of by base_head_torso_init_server
+                # self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+                # self.torso.go()
                 self.cameraSrv.call(0)
             except:
                 rospy.logerr('can not move torso to detecting height')
