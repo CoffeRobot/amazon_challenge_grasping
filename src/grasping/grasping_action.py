@@ -22,6 +22,7 @@ from amazon_challenge_motion.bt_motion import BTMotion
 import amazon_challenge_bt_actions.msg
 from grasping.generate_object_dict import *
 import random
+from simtrack_nodes.srv import SwitchObjects
 
 
 class BTAction(object):
@@ -38,18 +39,8 @@ class BTAction(object):
         self.pub_rate = rospy.Rate(30)
         self.poseFromSimtrack = True
 
-        while not rospy.is_shutdown():
-            try:
-                self.left_arm = moveit_commander.MoveGroupCommander('left_arm')
-                self.right_arm = moveit_commander.MoveGroupCommander('right_arm')
-                self._arms = moveit_commander.MoveGroupCommander('arms')
-
-                break
-            except:
-                pass
 
 
-        self.listener = tf.TransformListener()
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.Subscriber("/amazon_next_task", String, self.get_task)
         self._item = ""
@@ -109,7 +100,7 @@ class BTAction(object):
         # get base_move parameters
         while not rospy.is_shutdown():
             try:
-                base_move_params = rospy.get_param('/base_move')
+                self._base_move_params = rospy.get_param('/base_move')
                 self.base_pos_dict = rospy.get_param('/base_pos_dict')
                 self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
                 self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
@@ -120,11 +111,6 @@ class BTAction(object):
                 rospy.sleep(random.uniform(0,1))
                 continue
 
-        self._bm = baseMove.baseMove(verbose=False)
-        self._bm.setPosTolerance(base_move_params['pos_tolerance'])
-        self._bm.setAngTolerance(base_move_params['ang_tolerance'])
-        self._bm.setLinearGain(base_move_params['linear_gain'])
-        self._bm.setAngularGain(base_move_params['angular_gain'])
 
         while not rospy.is_shutdown():
             try:
@@ -134,7 +120,7 @@ class BTAction(object):
                 rospy.sleep(random.uniform(0,1))
                 continue
         self._as.start()
-        rospy.loginfo('Grapsing action ready')
+        rospy.loginfo('Grasping action ready')
 
     def flush(self):
         self._item = ""
@@ -199,7 +185,57 @@ class BTAction(object):
 
         return False
 
+    def start_bm_moveit(self):
+        while not rospy.is_shutdown():
+            try:
+                self.listener = tf.TransformListener()
+                self.robot = moveit_commander.RobotCommander()
+                self.left_arm = self.robot.get_group('left_arm')
+                self.right_arm = self.robot.get_group('right_arm')
+                self._arms = self.robot.get_group('arms')
+                self._bm = baseMove.baseMove(verbose=False)
+                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
+                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
+                self._bm.setLinearGain(self._base_move_params['linear_gain'])
+                self._bm.setAngularGain(self._base_move_params['angular_gain'])
+                break
+            except:
+                rospy.sleep(random.uniform(0,2))
+                pass
+
+            rospy.sleep(2.0)
+
+    def del_bm_moveit(self):
+        try:
+            del(self.listener)
+            del(self.robot)
+            del(self.left_arm)
+            del(self.right_arm)
+            del(self.torso)
+            del(self._arms)
+            del(self._bm)
+        except:
+            pass
+
+
+    def shutdown_simtrack(self):
+        # get simtrack switch objects service
+        while not rospy.is_shutdown():
+            try:
+                rospy.wait_for_service('/simtrack/switch_objects', 10.0)
+                break
+            except:
+                rospy.loginfo('[' + rospy.get_name() + ']: waiting for simtrack switch object service')
+                continue
+
+        simtrack_switch_objects_srv = rospy.ServiceProxy('/simtrack/switch_objects', SwitchObjects)
+
+        simtrack_switch_objects_srv.call()
+
     def execute_cb(self, goal):
+        self.shutdown_simtrack()
+        self.start_bm_moveit()
+        rospy.sleep(1.0)
         self._exit = False
         self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
 
@@ -211,6 +247,7 @@ class BTAction(object):
             rospy.logerr('Cannot access object spec from grasp dict')
             self.set_status('FAILURE')
             self.timer.shutdown()
+            self.del_bm_moveit()
             return
 
         self.pre_distance = self.objSpec.pre_distance # this is decided upon per object
@@ -220,6 +257,7 @@ class BTAction(object):
             rospy.loginfo('Action Halted')
             self._as.set_preempted()
             self.timer.shutdown()
+            self.del_bm_moveit()
             return
 
         rospy.loginfo('Executing Grasping')
@@ -232,6 +270,7 @@ class BTAction(object):
                     if status:
                         break
                     if self.execute_exit():
+                        self.del_bm_moveit()
                         return
                 if status:
                     break
@@ -242,6 +281,7 @@ class BTAction(object):
                     if status:
                         break
                     if self.execute_exit():
+                        self.del_bm_moveit()
                         return
                 if status:
                     break
@@ -255,6 +295,7 @@ class BTAction(object):
         else:
             self.set_status('FAILURE')
         self.timer.shutdown()
+        self.del_bm_moveit()
         return
 
 
@@ -687,7 +728,7 @@ class BTAction(object):
 
         angle = base_pos_goal[5]
         pos = base_pos_goal[0:2]
-        r = rospy.Rate(100.0)
+        r = rospy.Rate(20.0)
 
         # check for preemption while the base hasn't reach goal configuration
         while not self._bm.goAngle(angle) and not rospy.is_shutdown():

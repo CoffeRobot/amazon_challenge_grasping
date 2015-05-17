@@ -33,7 +33,7 @@ class baseScan:
         self.leg1 = []
         self.leg2 = []
         self.br = tf.TransformBroadcaster()
-        self.rate = rospy.Rate(100.0)
+        self.rate = rospy.Rate(20.0)
         self.calibrated = False
         self.reCalibration = False
         self.priorOri_in_base_laser_link = [] # in base_laser_link frame
@@ -47,7 +47,7 @@ class baseScan:
         self.binOffset = 0.02
         self.pubShelfSep = rospy.Publisher('pubShelfSep', PoseStamped)
         self.reCalibrationCount = 4
-        self.tolerance = 0.1
+        self.tolerance = 0.3
         self.updateRounds = 100
         self.asyncRate = 20
         self.limitInitX = True
@@ -92,7 +92,7 @@ class baseScan:
 
     def getCloud(self):
 
-        self.refreshRangeData()
+        # self.refreshRangeData()
         cloud2 = self.laser_projector.projectLaser(self.rangeData)
 
         xyz = pc2.read_points(cloud2, skip_nans=True, field_names=("x", "y", "z"))
@@ -192,7 +192,7 @@ class baseScan:
 
         rotAngle = atan2(ori_x - left_leg[0], left_leg[1] - ori_y)
 
-        return [ori_x, ori_y], rotAngle
+        return [ori_x, ori_y], rotAngle, legs
 
     def tf2PoseStamped(self, xy, ori):
         shelfPoseMsg = PoseStamped()
@@ -225,38 +225,38 @@ class baseScan:
         shelfN = 0
         recalibrateCount = 0
         emergencyCount = 0
+        t_init = rospy.Time.now()
 
         while not rospy.is_shutdown():
+            self.rate.sleep()
             # check if human calibration is done
-            shelfOri, shelfRot = self.getShelfFrame()
-            legs = self.findLegs()
-            
+            shelfOri, shelfRot, legs = self.getShelfFrame()
+
+
             if self.reCalibration:
                 u = 0
 
             if not self.calibrated:
-                try:
-                    self.br.sendTransform((shelfOri[0], shelfOri[1], 0),
-                                     tf.transformations.quaternion_from_euler(0, 0, shelfRot),
-                                     rospy.Time.now(),
-                                     "/shelf_frame",     # child
-                                     "/base_laser_link"      # parent
-                                     )
 
-                    self.br.sendTransform((legs[0][0], legs[0][1], 0), \
-                                     tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
-                                     rospy.Time.now(),\
-                                     "/left_leg",   \
-                                     "/base_laser_link")
+                self.br.sendTransform((shelfOri[0], shelfOri[1], 0),
+                                      tf.transformations.quaternion_from_euler(0, 0, shelfRot),
+                                      rospy.Time.now(),
+                                      "/shelf_frame",     # child
+                                      "/base_laser_link"      # parent
+                                      )
 
-                    self.br.sendTransform((legs[1][0], legs[1][1], 0), \
-                                     tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
-                                     rospy.Time.now(),\
-                                     "/right_leg",   \
-                                     "/base_laser_link")
+                self.br.sendTransform((legs[0][0], legs[0][1], 0), \
+                                      tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
+                                      rospy.Time.now(), \
+                                      "/left_leg", \
+                                      "/base_laser_link")
 
-                except:
-                    continue
+                self.br.sendTransform((legs[1][0], legs[1][1], 0), \
+                                      tf.transformations.quaternion_from_euler(0, 0, shelfRot), \
+                                      rospy.Time.now(), \
+                                      "/right_leg", \
+                                      "/base_laser_link")
+
 
             
                 
@@ -350,7 +350,7 @@ class baseScan:
                                 self.odomR, self.odomR_rot = self.listener.lookupTransform("/odom_combined", "/right_leg", rospy.Time(0))
                                 break
                             except:
-                                rospy.sleep(0.4)
+                                pass
                         self.emergency = shelfInfo(self.odomL, self.odomL_rot, self.odomR, self.odomR_rot, rospy.Time.now())
                         self.saveEmergency()
                     else:
@@ -416,7 +416,8 @@ class baseScan:
                         except:
                             continue
 
-                if shelfN%self.asyncRate == 0:
+                if (rospy.Time.now()-t_init).to_sec()>1.0:
+                    t_init = rospy.Time.now()
                     self.emergency = shelfInfo(self.odomL, self.odomL_rot, self.odomR, self.odomR_rot, rospy.Time.now())
                     self.saveEmergency()
                     # print 'pub'
