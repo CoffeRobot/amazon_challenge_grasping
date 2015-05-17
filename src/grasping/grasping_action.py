@@ -80,6 +80,8 @@ class BTAction(object):
         self.topGraspingTouchSteps = self.grasping_param_dict['topGraspingTouchSteps']
         self.topGraspingTouchTolerance = self.grasping_param_dict['topGraspingTouchTolerance']
         self.topGraspingYshiftTolerance = self.grasping_param_dict['topGraspingYshiftTolerance']
+        self.topGraspingLiftingHeight = self.grasping_param_dict['topGraspingLiftingHeight']
+        self.topGraspingMaxReachingHeight = self.grasping_param_dict['topGraspingMaxReachingHeight']
         self.dictObj = objDict()
         self.objSpec = {}
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
@@ -357,11 +359,12 @@ class BTAction(object):
 
                 rospy.loginfo('topGraspingYaw now: %4f' % tgy)
                 tool_frame_rotation = kdl.Rotation.RPY(math.radians(self.topGraspingRoll), math.radians(tgp), math.radians(tgy))
+                reachingHeight = max(self.topGraspingMaxReachingHeight, tp[0][2] + self.topGraspHeight)
                 '''
                 PRE-GRASPING
                 '''
 
-                pre_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGrasping_pre_distance, tp[0][1] + y_shift_now, tp[0][2] + self.topGraspHeight))
+                pre_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGrasping_pre_distance, tp[0][1] + y_shift_now, reachingHeight))
 
 
                 try:
@@ -378,7 +381,7 @@ class BTAction(object):
                 if self.poseFromSimtrack:
                     reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + reach_Y_shift, tp[0][2] + self.topGraspHeight))
                 else:
-                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift, tp[0][2] + self.topGraspHeight))
+                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift, tp[0][2] + reachingHeight))
                
                 try:
                     pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
@@ -417,8 +420,8 @@ class BTAction(object):
                     shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + 0.01, touching_height))
                     shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] - 0.01, touching_height))
                 else:
-                    shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + 0.01, touching_height))
-                    shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] - 0.01, touching_height))
+                    shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift + 0.01, touching_height))
+                    shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift - 0.01, touching_height))
                 
                 for i in range(self.topGraspingShakingNumber):
                     if self._exit:
@@ -446,7 +449,7 @@ class BTAction(object):
                 LIFTING
                 '''
 
-                lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.topGraspHeight))
+                lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.topGraspingLiftingHeight))
                 
 
 
@@ -516,7 +519,7 @@ class BTAction(object):
         self.open_left_gripper()
         row_height = self.grasping_param_dict['row_height'][self.get_row()]
         
-        if tp[0][2] - row_height < 0.04:
+        if tp[0][2] - row_height < 0.02:
             return False
 
         if abs(objBinRPY[1]) > 0.5:

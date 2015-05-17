@@ -105,7 +105,7 @@ class objDict:
 
         invalidApproachAxis = [0]
         invalidGraspAxis = [0]
-        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, True)
+        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, False)
         self.dict['paper_mate_12_count_mirado_black_warrior'] = paper_mate_12_count_mirado_black_warrior
 
         invalidApproachAxis = [2]
@@ -115,9 +115,14 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        stanley_66_052 = objAttr('stanley_66_052', invalidApproachAxis, invalidGraspAxis, [1,0], False, -0.1, True)
+        stanley_66_052 = objAttr('stanley_66_052', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, False)
         self.dict['stanley_66_052'] = stanley_66_052
 
+        # this is here just for safety
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        dummyEntry = objAttr('dummyEntry', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.15, False)
+        self.dict['dummyEntry'] = dummyEntry
 
 
 
@@ -133,22 +138,25 @@ class objDict:
 
 
     def saveDict(self):
-
         with open(self.fileName, 'wb') as handle:
             pickle.dump(self.dict, handle)
 
     def loadDict(self):
-       
         with open(self.fileName, 'rb') as handle:
             self.loaded = pickle.load(handle)
 
     def getEntry(self, name):
 
-        name = name.strip('/')
+        name = name.lstrip('/')
 
         if not self.loaded:
             self.loadDict()
-        return self.loaded[name]
+        try:
+            return self.loaded[name]
+        except:
+            rospy.logerr('object not in the objDict, using the dummyEntry')
+            return self.loaded['dummyEntry']
+
 
 
 
@@ -159,5 +167,5 @@ if __name__ == "__main__":
     dictObj.makeDict()
     dictObj.saveDict()
     dictObj.loadDict()
-    c = dictObj.getEntry('cheezit_big_original')
+    c = dictObj.getEntry('elmers_washable_no_run_school_glue')
     print c
