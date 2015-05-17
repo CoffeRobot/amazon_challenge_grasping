@@ -259,6 +259,8 @@ class superDetector(object):
                 rospy.sleep(random.uniform(0,2))
                 pass
 
+        rospy.sleep(2.0)
+
     def del_bm_moveit(self):
         try:
             del(self.listener)

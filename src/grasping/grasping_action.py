@@ -22,6 +22,7 @@ from amazon_challenge_motion.bt_motion import BTMotion
 import amazon_challenge_bt_actions.msg
 from grasping.generate_object_dict import *
 import random
+from simtrack_nodes.srv import SwitchObjects
 
 
 class BTAction(object):
@@ -119,7 +120,7 @@ class BTAction(object):
                 rospy.sleep(random.uniform(0,1))
                 continue
         self._as.start()
-        rospy.loginfo('Grapsing action ready')
+        rospy.loginfo('Grasping action ready')
 
     def flush(self):
         self._item = ""
@@ -202,6 +203,8 @@ class BTAction(object):
                 rospy.sleep(random.uniform(0,2))
                 pass
 
+            rospy.sleep(2.0)
+
     def del_bm_moveit(self):
         try:
             del(self.listener)
@@ -214,7 +217,23 @@ class BTAction(object):
         except:
             pass
 
+
+    def shutdown_simtrack(self):
+        # get simtrack switch objects service
+        while not rospy.is_shutdown():
+            try:
+                rospy.wait_for_service('/simtrack/switch_objects', 10.0)
+                break
+            except:
+                rospy.loginfo('[' + rospy.get_name() + ']: waiting for simtrack switch object service')
+                continue
+
+        simtrack_switch_objects_srv = rospy.ServiceProxy('/simtrack/switch_objects', SwitchObjects)
+
+        simtrack_switch_objects_srv.call()
+
     def execute_cb(self, goal):
+        self.shutdown_simtrack()
         self.start_bm_moveit()
         rospy.sleep(1.0)
         self._exit = False
