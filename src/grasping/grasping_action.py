@@ -121,6 +121,25 @@ class BTAction(object):
             except:
                 rospy.sleep(random.uniform(0,1))
                 continue
+
+
+        while not rospy.is_shutdown():
+            try:
+                self.listener = tf.TransformListener()
+                self.robot = moveit_commander.RobotCommander()
+                self.left_arm = self.robot.get_group('left_arm')
+                self.right_arm = self.robot.get_group('right_arm')
+                self._arms = self.robot.get_group('arms')
+                self._bm = baseMove.baseMove(verbose=False)
+                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
+                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
+                self._bm.setLinearGain(self._base_move_params['linear_gain'])
+                self._bm.setAngularGain(self._base_move_params['angular_gain'])
+                break
+            except:
+                rospy.sleep(random.uniform(0,2))
+                pass
+
         self._as.start()
         rospy.loginfo('Grasping action ready')
 
@@ -187,39 +206,6 @@ class BTAction(object):
 
         return False
 
-    def start_bm_moveit(self):
-        while not rospy.is_shutdown():
-            try:
-                self.listener = tf.TransformListener()
-                self.robot = moveit_commander.RobotCommander()
-                self.left_arm = self.robot.get_group('left_arm')
-                self.right_arm = self.robot.get_group('right_arm')
-                self._arms = self.robot.get_group('arms')
-                self._bm = baseMove.baseMove(verbose=False)
-                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
-                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
-                self._bm.setLinearGain(self._base_move_params['linear_gain'])
-                self._bm.setAngularGain(self._base_move_params['angular_gain'])
-                break
-            except:
-                rospy.sleep(random.uniform(0,2))
-                pass
-
-            rospy.sleep(2.0)
-
-    def del_bm_moveit(self):
-        try:
-            del(self.listener)
-            del(self.robot)
-            del(self.left_arm)
-            del(self.right_arm)
-            del(self.torso)
-            del(self._arms)
-            del(self._bm)
-        except:
-            pass
-
-
     def shutdown_simtrack(self):
         # get simtrack switch objects service
         while not rospy.is_shutdown():
@@ -235,8 +221,7 @@ class BTAction(object):
         simtrack_switch_objects_srv.call()
 
     def execute_cb(self, goal):
-        self.shutdown_simtrack()
-        self.start_bm_moveit()
+        #self.shutdown_simtrack()
         rospy.sleep(1.0)
         self._exit = False
         self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
@@ -249,7 +234,6 @@ class BTAction(object):
             rospy.logerr('Cannot access object spec from grasp dict')
             self.set_status('FAILURE')
             self.timer.shutdown()
-            self.del_bm_moveit()
             return
 
         self.pre_distance = self.objSpec.pre_distance # this is decided upon per object
@@ -259,7 +243,6 @@ class BTAction(object):
             rospy.loginfo('Action Halted')
             self._as.set_preempted()
             self.timer.shutdown()
-            self.del_bm_moveit()
             return
 
         rospy.loginfo('Executing Grasping')
@@ -272,7 +255,6 @@ class BTAction(object):
                     if status:
                         break
                     if self.execute_exit():
-                        self.del_bm_moveit()
                         return
                 if status:
                     break
@@ -283,7 +265,6 @@ class BTAction(object):
                     if status:
                         break
                     if self.execute_exit():
-                        self.del_bm_moveit()
                         return
                 if status:
                     break
@@ -297,7 +278,6 @@ class BTAction(object):
         else:
             self.set_status('FAILURE')
         self.timer.shutdown()
-        self.del_bm_moveit()
         return
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 import moveit_commander
 
 import rospy
@@ -67,6 +67,23 @@ class superDetector(object):
                 rospy.sleep(random.uniform(0,2))
                 continue
 
+        while not rospy.is_shutdown():
+            try:
+                self.listener = tf.TransformListener()
+                self.robot = moveit_commander.RobotCommander()
+                self.left_arm = self.robot.get_group('left_arm')
+                self.right_arm = self.robot.get_group('right_arm')
+                self.torso = self.robot.get_group('torso')
+                self._arms = self.robot.get_group('arms')
+                self._bm = baseMove.baseMove(verbose=False)
+                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
+                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
+                self._bm.setLinearGain(self._base_move_params['linear_gain'])
+                self._bm.setAngularGain(self._base_move_params['angular_gain'])
+                break
+            except:
+                rospy.sleep(random.uniform(0,2))
+                pass
 
         self._as.start()
         rospy.loginfo('SuperDetector ready')
@@ -240,43 +257,9 @@ class superDetector(object):
             rospy.sleep(0.4)
         self.set_status('FAILURE')
 
-    def start_bm_moveit(self):
-        while not rospy.is_shutdown():
-            try:
-                self.listener = tf.TransformListener()
-                self.robot = moveit_commander.RobotCommander()
-                self.left_arm = self.robot.get_group('left_arm')
-                self.right_arm = self.robot.get_group('right_arm')
-                self.torso = self.robot.get_group('torso')
-                self._arms = self.robot.get_group('arms')
-                self._bm = baseMove.baseMove(verbose=False)
-                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
-                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
-                self._bm.setLinearGain(self._base_move_params['linear_gain'])
-                self._bm.setAngularGain(self._base_move_params['angular_gain'])
-                break
-            except:
-                rospy.sleep(random.uniform(0,2))
-                pass
-
-        rospy.sleep(2.0)
-
-    def del_bm_moveit(self):
-        try:
-            del(self.listener)
-            del(self.robot)
-            del(self.left_arm)
-            del(self.right_arm)
-            del(self.torso)
-            del(self._arms)
-            del(self._bm)
-        except:
-            pass
-
 
     def receive_update(self,goal):
 
-        self.start_bm_moveit()
         rospy.sleep(1.0)
 
         self._failure_on_exit=False
@@ -298,7 +281,6 @@ class superDetector(object):
 
         if not self.get_services():
             if self.execute_exit():
-                self.del_bm_moveit()
                 return
 
         self.objSrv.call([self._item])
@@ -310,7 +292,6 @@ class superDetector(object):
 
             if not self.get_services():
                 if self.execute_exit():
-                    self.del_bm_moveit()
                     return
 
             try:
@@ -323,7 +304,6 @@ class superDetector(object):
                 detect = False
 
             if self.execute_exit():
-                self.del_bm_moveit()
                 return
 
 
@@ -337,7 +317,6 @@ class superDetector(object):
                 self.updating = False
                 self.lock.release()
                 self.timer.shutdown()
-                self.del_bm_moveit()
                 return
 
 
@@ -349,7 +328,6 @@ class superDetector(object):
 
             if not self.get_services():
                 if self.execute_exit():
-                    self.del_bm_moveit()
                     return
 
             try:
@@ -362,7 +340,6 @@ class superDetector(object):
                 detect = False
 
             if self.execute_exit():
-                self.del_bm_moveit()
                 return
 
             if detect:
@@ -382,7 +359,6 @@ class superDetector(object):
                     self.updating = False
                     self.lock.release()
                     self.timer.shutdown()
-                    self.del_bm_moveit()
                     return
 
             if not self.move_arm_to_init('left_arm'):
@@ -392,7 +368,6 @@ class superDetector(object):
                     self.setFailureOnExit()
                 self.timer.shutdown()
                 self.lock.release()
-                self.del_bm_moveit()
                 return
 
 
@@ -402,7 +377,6 @@ class superDetector(object):
 
             if not self.get_services():
                 if self.execute_exit():
-                    self.del_bm_moveit()
                     return
 
             self.cameraSrv.call(2)
@@ -417,7 +391,6 @@ class superDetector(object):
                 detect = False
 
             if self.execute_exit():
-                self.del_bm_moveit()
                 return
 
             if detect:
@@ -437,7 +410,6 @@ class superDetector(object):
                     self.updating = False
                     self.lock.release()
                     self.timer.shutdown()
-                    self.del_bm_moveit()
                     return
 
             if not self.move_arm_to_init('right_arm'):
@@ -447,11 +419,9 @@ class superDetector(object):
                     self.setFailureOnExit()
                 self.timer.shutdown()
                 self.lock.release()
-                self.del_bm_moveit()
                 return
 
             if self.execute_exit():
-                self.del_bm_moveit()
                 return
 
         rospy.loginfo('try to update object pose with point cloud segmentation')
@@ -461,7 +431,6 @@ class superDetector(object):
 
         if not self.get_services():
             if self.execute_exit():
-                self.del_bm_moveit()
                 return
         try:
             self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
@@ -488,12 +457,10 @@ class superDetector(object):
             self.updating = False
             if not self.get_services() and not self._failure_on_exit:
                 if self.execute_exit():
-                    self.del_bm_moveit()
                     return
             self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
             self.timer.shutdown()
             self.lock.release()
-            self.del_bm_moveit()
             return
 
 
@@ -508,7 +475,6 @@ class superDetector(object):
         self.updating = False
         self.lock.release()
         self.timer.shutdown()
-        self.del_bm_moveit()
         return
 
 
