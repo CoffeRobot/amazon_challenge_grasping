@@ -9,6 +9,10 @@ grasping_param_dict:
 
   sideGraspingRow1_pitch: -10.0
   sideGraspingRow1_reach: 0.1
+  sideGraspingRow1_liftAngle: -1
+  sideGraspingBookX: -0.02
+  sideGraspingBookY: 0.02
+  sideGraspingBookZ: 0.04
 
   gripperWidth: 0.085
 
