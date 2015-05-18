@@ -38,6 +38,7 @@ class BTAction(object):
         self.pub_pose = rospy.Publisher('hand_pose', PoseStamped)
         self.pub_rate = rospy.Rate(30)
         self.poseFromSimtrack = True
+        self.xLength = 0
 
 
 
@@ -237,6 +238,7 @@ class BTAction(object):
             return
 
         self.pre_distance = self.objSpec.pre_distance # this is decided upon per object
+        self.xLength = self.objSpec.xLength
         # start executing the action
         # check that preempt has not been requested by the client
         if self._as.is_preempt_requested():
@@ -520,9 +522,9 @@ class BTAction(object):
                 return False
 
             yaw_now = math.radians(angle_step * i)
-            y_shift_now = self.pre_distance * math.sin(yaw_now)
+            x_shift_now = (self.pre_distance + self.xLength) * math.cos(yaw_now)
+            y_shift_now = (self.pre_distance + self.xLength) * math.sin(yaw_now)
             rospy.loginfo('yaw_now: %4f, y_shift_now: %4f' % (yaw_now, y_shift_now))
-            x_shift_now = self.pre_distance * math.cos(yaw_now)
             '''
             PRE-GRASPING
             '''
