@@ -29,11 +29,11 @@ grasping_param_dict:
   topGraspingReachSeg: 0.02
   topGraspingTouchSteps: 10
   topGraspingTouchTolerance: 0.02
-  topGraspingYshiftTolerance: 0.02
+  topGraspingYshiftTolerance: 0.04
   topGraspingLiftingHeight: 0.04
   topGraspingMaxReachingHeight: 0.1
 
-  topGraspingYawTolerance: 45
+  topGraspingYawTolerance: 30
   topGraspingYawTrials: 6
 
   row_height:

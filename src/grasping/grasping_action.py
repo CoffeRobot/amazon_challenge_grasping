@@ -92,6 +92,7 @@ class BTAction(object):
         self.dictObj = objDict()
         self.objSpec = {}
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
+        
 
         # get ft_switch from the contest mode
         while not rospy.is_shutdown():
@@ -226,9 +227,10 @@ class BTAction(object):
         simtrack_switch_objects_srv = rospy.ServiceProxy('/simtrack/switch_objects', SwitchObjects)
 
         simtrack_switch_objects_srv.call()
+        rospy.loginfo('[grasp_action]: simtrack switched off')
 
     def execute_cb(self, goal):
-        #self.shutdown_simtrack()
+        self.shutdown_simtrack()
         rospy.sleep(1.0)
         self._exit = False
         self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
@@ -335,10 +337,10 @@ class BTAction(object):
             for j in range(self.topGraspingYawTrials):
                 if self._exit:
                     return False
-                y_shift_step = 0.15 / (self.topGraspingYawTrials - 1.0)
+                y_shift_step = 0.06 / (self.topGraspingYawTrials - 1.0)
                 reach_Y_shift_step = self.topGraspingYshiftTolerance / (self.topGraspingYawTrials - 1.0)
                 
-                if binFrame[0][1] >= 0.15:
+                if binFrame[0][1] >= 0.13:
                     tgy = self.topGraspingYawTolerance / (self.topGraspingYawTrials - 1) * j
                     y_shift_now = - y_shift_step * j
                     reach_Y_shift = - reach_Y_shift_step * j
@@ -349,8 +351,10 @@ class BTAction(object):
 
 
                 rospy.loginfo('topGraspingYaw now: %4f' % tgy)
+                row_height = self.grasping_param_dict['row_height'][self.get_row()]
                 tool_frame_rotation = kdl.Rotation.RPY(math.radians(self.topGraspingRoll), math.radians(tgp), math.radians(tgy))
-                reachingHeight = max(self.topGraspingMaxReachingHeight, tp[0][2] + self.topGraspHeight)
+                reachingHeight = min(self.topGraspingMaxReachingHeight + row_height, tp[0][2] + self.topGraspHeight)
+
                 '''
                 PRE-GRASPING
                 '''
@@ -372,7 +376,7 @@ class BTAction(object):
                 if self.poseFromSimtrack:
                     reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + reach_Y_shift, tp[0][2] + self.topGraspHeight))
                 else:
-                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift, tp[0][2] + reachingHeight))
+                    reaching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift, reachingHeight))
                
                 try:
                     pr2_moveit_utils.go_tool_frame(self.left_arm, reaching_pose, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
@@ -385,7 +389,6 @@ class BTAction(object):
                 TOUCHING
                 '''
 
-                row_height = self.grasping_param_dict['row_height'][self.get_row()]
                 touching_height = max(tp[0][2], row_height)
                 if self.poseFromSimtrack:
                     touching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + reach_Y_shift, touching_height))
