@@ -262,6 +262,9 @@ class BTAction(object):
                     break
             elif gs == 1:
                 rospy.loginfo("topGrasping is chosen")
+                if self.get_row() == 'row_1':
+                    rospy.loginfo('topGrasping cannot be applied on row_1')
+                    break
                 for i in range(self.topGraspingTrials):
                     status = self.topGrasping()
                     if status:
