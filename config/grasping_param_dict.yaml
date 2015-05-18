@@ -7,6 +7,9 @@ grasping_param_dict:
   sideGraspingTrials: 1
   sideGraspingSegReach: 0.02
 
+  sideGraspingRow1_pitch: -10.0
+  sideGraspingRow1_reach: 0.1
+
   gripperWidth: 0.085
 
   topGraspingTrials: 1

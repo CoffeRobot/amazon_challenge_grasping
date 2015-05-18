@@ -83,6 +83,9 @@ class BTAction(object):
         self.topGraspingYshiftTolerance = self.grasping_param_dict['topGraspingYshiftTolerance']
         self.topGraspingLiftingHeight = self.grasping_param_dict['topGraspingLiftingHeight']
         self.topGraspingMaxReachingHeight = self.grasping_param_dict['topGraspingMaxReachingHeight']
+        self.sideGraspingRow1_pitch = self.grasping_param_dict['sideGraspingRow1_pitch']
+        self.sideGraspingRow1_reach = self.grasping_param_dict['sideGraspingRow1_reach']
+        self.sideGraspingRow1_liftAngle = self.grasping_param_dict['sideGraspingRow1_liftAngle']
         self.dictObj = objDict()
         self.objSpec = {}
         self.topGrasping_pre_distance = self.grasping_param_dict['topGrasping_pre_distance']
@@ -528,6 +531,9 @@ class BTAction(object):
             x_shift_now = (self.pre_distance + self.xLength) * math.cos(yaw_now)
             y_shift_now = (self.pre_distance + self.xLength) * math.sin(yaw_now)
             rospy.loginfo('yaw_now: %4f, y_shift_now: %4f' % (yaw_now, y_shift_now))
+
+
+
             '''
             PRE-GRASPING
             '''
@@ -535,7 +541,11 @@ class BTAction(object):
 
 
             rospy.logerr(yaw_now)
-            pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now, 0))
+            if self.get_row() == 'row_1':
+                pre_pose = kdl.Frame(kdl.Rotation.RPY(0, math.radians(self.sideGraspingRow1_pitch), yaw_now), kdl.Vector( x_shift_now, y_shift_now, binFrame[0][2]/2))
+            else:
+                pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now, 0))
+
             pre_pose_robot = self.transformPoseToRobotFrame(pre_pose, planner_frame)
 
             if self._exit:
@@ -553,10 +563,16 @@ class BTAction(object):
             '''
             rospy.loginfo('REACHING')
             if self.poseFromSimtrack:
-                reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( 0.0, 0.0, 0))
+                if self.get_row == 'row_1':
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( - binFrame[0][0]/2, 0.0, binFrame[0][2]/2))
+                else:
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( 0.0, 0.0, 0))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
             else:
-                reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach, 0.0, 0))
+                if self.get_row() == 'row_1':
+                    reaching_pose = kdl.Frame(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( 0.0, 0.0, binFrame[0][2]/2))
+                else:
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach, 0.0, 0))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
 
             if self._exit:
@@ -592,16 +608,28 @@ class BTAction(object):
 
             rospy.loginfo('LIFTING')
 
-            lifting_pose = kdl.Frame(kdl.Rotation.RPY(tpRPY[0], tpRPY[1], 0), kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.lifting_height))
+            if self.get_row() == 'row_1':
+                curr_joints = left_arm.get_current_joint_values()
+                curr_joints[5] = self.sideGraspingRow1_liftAngle
+                left_arm.set_joint_value_target(curr_joints)
+                try:
+                    left_arm.go()
+                except:
+                    self.open_left_gripper()
+                    rospy.logerr('exception in LIFTING')
+                    continue
 
-        
-            try:
-                pr2_moveit_utils.go_tool_frame(self.left_arm, lifting_pose, base_frame_id = 'base_link', ft=self.ft_switch,
-                                               wait=True, tool_x_offset=self._tool_size[0])
-            except:
-                self.open_left_gripper()
-                rospy.logerr('exception in LIFTING')
-                continue
+            else:
+                lifting_pose = kdl.Frame(kdl.Rotation.RPY(tpRPY[0], tpRPY[1], 0), kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.lifting_height))
+
+            
+                try:
+                    pr2_moveit_utils.go_tool_frame(self.left_arm, lifting_pose, base_frame_id = 'base_link', ft=self.ft_switch,
+                                                   wait=True, tool_x_offset=self._tool_size[0])
+                except:
+                    self.open_left_gripper()
+                    rospy.logerr('exception in LIFTING')
+                    continue
 
             '''
             RETREATING
