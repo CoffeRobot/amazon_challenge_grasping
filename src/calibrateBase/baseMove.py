@@ -19,7 +19,7 @@ twistBound = namedtuple('twistBound', ['lower', 'upper'])
 class baseMove:
     def __init__(self, verbose=False):
         self.base_pub = rospy.Publisher('/base_controller/command', Twist)
-        self.listener = tf.TransformListener()
+        # self.listener = tf.TransformListener()
         self.verbose = verbose
         self.posTolerance = 4
         self.angTolerance = 1
@@ -29,7 +29,7 @@ class baseMove:
         self.linearTwistBound = twistBound(0.04, 0.15)
         self.angularTwistBound = twistBound(0.06, 0.3)
         self.refFrame = '/shelf_frame'
-        rospy.Subscriber("pubShelfSep", PoseStamped, self.updateShelfPose)
+        rospy.Subscriber("/pubShelfSep", PoseStamped, self.updateShelfPose)
         self.trans = (0,0,0)
         self.pose = (0,0,0,0)
         self.move = False
@@ -80,6 +80,7 @@ class baseMove:
 
                 if (rospy.Time.now() - self.walltime).to_sec() > 0.4:
                     self.move = False
+                # self.move=True
 
                 if self.move:
                     trans = self.trans
@@ -147,6 +148,7 @@ class baseMove:
 
                 if (rospy.Time.now() - self.walltime).to_sec() > 0.4:
                     self.move = False
+                # self.move=True
 
                 if self.move:
                     trans = self.trans
