@@ -221,7 +221,7 @@ class BTAction(object):
         simtrack_switch_objects_srv.call()
 
     def execute_cb(self, goal):
-        self.shutdown_simtrack()
+        #self.shutdown_simtrack()
         rospy.sleep(1.0)
         self._exit = False
         self.timer = rospy.Timer(rospy.Duration(self._timeout), self.timer_callback, oneshot=True)
