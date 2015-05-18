@@ -587,7 +587,7 @@ class BTAction(object):
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
             else:
                 if self.get_row() == 'row_1':
-                    reaching_pose = kdl.Frame(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( bookX, bookY, binFrame[0][2]/2))
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( bookX, bookY, binFrame[0][2]/2))
                 else:
                     reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach + bookX, bookY, 0))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
