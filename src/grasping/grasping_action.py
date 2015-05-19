@@ -414,8 +414,8 @@ class BTAction(object):
                     shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + 0.01, touching_height))
                     shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] - 0.01, touching_height))
                 else:
-                    shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift + 0.01, touching_height))
-                    shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift - 0.01, touching_height))
+                    shaking_pose1 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift + 0.02, touching_height))
+                    shaking_pose2 = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0] + self.topGraspingReachSeg, tp[0][1] + reach_Y_shift - 0.02, touching_height))
                 
                 for i in range(self.topGraspingShakingNumber):
                     if self._exit:
@@ -424,13 +424,13 @@ class BTAction(object):
                         pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose1, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                        wait=True, tool_x_offset=self._tool_size[0])
                     except:
-                        rospy.logerr('exception in SMART-SHAKING 1, never mind')
+                        rospy.logerr('exception in SMART-SHAKING left, never mind')
 
                     try:
                         pr2_moveit_utils.go_tool_frame(self.left_arm, shaking_pose2, base_frame_id = self.topGraspingFrame, ft=self.ft_switch,
                                                        wait=True, tool_x_offset=self._tool_size[0])
                     except:
-                        rospy.logerr('exception in SMART-SHAKING 2, never mind')
+                        rospy.logerr('exception in SMART-SHAKING right, never mind')
 
 
                 '''

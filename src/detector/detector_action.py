@@ -21,6 +21,9 @@ from vision.srv import StartAggregator
 import random
 from grasping.generate_object_dict import *
 from calibrateBase import baseMove
+from amazon_challenge_bt_actions.srv import *
+import numpy as np
+
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
@@ -39,6 +42,7 @@ class superDetector(object):
         rospy.Subscriber("/amazon_next_task", String, self.get_task)
         self._item = ''
         self._bin = ''
+        self._binItems = []
         self.trials = 10
         self.obsN = 4
         self.br = tf.TransformBroadcaster()
@@ -91,6 +95,7 @@ class superDetector(object):
     def flush(self):
         self._item = ""
         self._bin = ""
+        self._binItems = []
 
     def get_services(self):
         while not rospy.is_shutdown():
@@ -102,6 +107,7 @@ class superDetector(object):
                 rospy.wait_for_service('/simtrack/switch_camera', 1.0)
                 rospy.wait_for_service('/simtrack/switch_objects', 1.0)
                 rospy.wait_for_service('/aggregate_cloud', 1.0)
+                rospy.wait_for_service('/bin_trigger', 1.0)
                 break
             except:
                 rospy.loginfo('[detector]: waiting for simtrack and segmentation services')
@@ -111,6 +117,7 @@ class superDetector(object):
         self.cameraSrv = rospy.ServiceProxy('/simtrack/switch_camera', SwitchCamera)
         self.objSrv = rospy.ServiceProxy('/simtrack/switch_objects', SwitchObjects)
         self.segSrv = rospy.ServiceProxy('/aggregate_cloud', StartAggregator)
+        self.binSrv = rospy.ServiceProxy('bin_trigger', BinTrigger)
 
         return True
 
@@ -156,6 +163,15 @@ class superDetector(object):
         self._bin = words[0]
         self._item = words[1]
 
+    def updateBinItems(self):
+        text = self.binSrv.call()
+        text = text.message
+        self._binItems = []
+        for it in text:
+            self._binItems.append(it)
+        rospy.loginfo('bin_items updated')
+
+
 
     
 
@@ -197,6 +213,38 @@ class superDetector(object):
             return True
         else:
             return False
+
+        
+
+    def getAllSimtrackItems(self):
+
+        '''
+        this returns the xyz of non-target objects in the current bin
+        '''
+
+
+        refs = []
+        foundItems = []
+
+        for it in self._binItems:
+
+            if it == self._item:
+                continue
+            
+            for i in range(4):
+                try:
+                    refTmp = self.listener.lookupTransform('/base_footprint', "/" + it, rospy.Time(0))
+                    refs.append(refTmp[0])
+                    foundItems.append(it)
+                    rospy.loginfo('got %s' % it)
+                    break
+                except:
+                    rospy.sleep(0.4)
+
+        return foundItems, refs
+
+
+
 
     def move_arm_to_init(self, arm_name):
 
@@ -258,9 +306,16 @@ class superDetector(object):
         self.set_status('FAILURE')
 
 
+    def composeSegRefs(self, refs):
+        ret = []
+        for r in refs:
+            for c in r:
+                ret.append(c)
+        return ret
     def receive_update(self,goal):
 
         rospy.sleep(1.0)
+        self.updateBinItems()
 
         self._failure_on_exit=False
         self.preempted = False
@@ -283,7 +338,8 @@ class superDetector(object):
             if self.execute_exit():
                 return
 
-        self.objSrv.call([self._item])
+        self.objSrv.call(self._binItems)
+        # raw_input('press to continue')
 
         if simtrackEnabled:
             rospy.loginfo('try to update object pose with kinect')
@@ -426,20 +482,52 @@ class superDetector(object):
 
         rospy.loginfo('try to update object pose with point cloud segmentation')
 
+
         detect = True
         self.simTrackUsed = False
 
         if not self.get_services():
             if self.execute_exit():
                 return
+        
+        foundItems, refs = self.getAllSimtrackItems()
+
+        if len(self._binItems) - len(foundItems) > 2:
+            rospy.logerr('Do not have enough info for reasoning in object segmentation')
+            if not self.preempted:
+                self.set_status('FAILURE')
+            else:
+                self.setFailureOnExit()
+
+            self.updating = False
+            self.timer.shutdown()
+            self.lock.release()
+            return
+
+        
         try:
             self.torso.set_joint_value_target(self.torso_joint_pos_dict['pregrasp'][self.get_row()])
+            segResult = self.segSrv.call(0, foundItems, self.composeSegRefs(refs))
             self.torso.go()
             self.cameraSrv.call(0)
-            self.segSrv.call(0)
         except:
-            rospy.logerr('can not move torso to detecting height')
+            rospy.logerr('can not finish init of segmentation pose')
             detect = False
+
+
+        if not segResult:
+            rospy.logerr('Segmentation returned FAILURE')
+            if not self.preempted:
+                self.set_status('FAILURE')
+            else:
+                self.setFailureOnExit()
+
+            self.segSrv.call(1, [], [])
+            self.updating = False
+            self.timer.shutdown()
+            self.lock.release()
+            return
+
 
         if detect:
             if self.getSimTrackUpdate():
@@ -458,7 +546,7 @@ class superDetector(object):
             if not self.get_services() and not self._failure_on_exit:
                 if self.execute_exit():
                     return
-            self.segSrv.call(1) # from this point on, it's gonna be the detector(this) publishing only
+            self.segSrv.call(1, [], []) # from this point on, it's gonna be the detector(this) publishing only
             self.timer.shutdown()
             self.lock.release()
             return
