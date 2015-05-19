@@ -78,7 +78,8 @@ class baseMove:
 
             elif self.source == 1:
 
-                if (rospy.Time.now() - self.walltime).to_sec() > 0.4:
+                if (rospy.Time.now() - self.walltime).to_sec() > 1.0:
+                    rospy.logerr('[baseMove]: old shelf pose message, time diff ' + str((rospy.Time.now()-self.walltime).to_sec()))
                     self.move = False
                 # self.move=True
 
@@ -146,7 +147,8 @@ class baseMove:
 
             elif self.source == 1:
 
-                if (rospy.Time.now() - self.walltime).to_sec() > 0.4:
+                if (rospy.Time.now() - self.walltime).to_sec() > 1.0:
+                    rospy.logerr('[baseMove]: old shelf pose message, time diff ' + str((rospy.Time.now()-self.walltime).to_sec()))
                     self.move = False
                 # self.move=True
 
