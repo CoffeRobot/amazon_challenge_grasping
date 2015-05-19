@@ -16,7 +16,7 @@ import pickle
 from collections import namedtuple
 import rospkg
 from grasping.myTypes import *
-
+import random
 
 # assuming there is already a ros node, do not init one here
 
@@ -54,6 +54,15 @@ class baseScan:
         self.xLimit = 0.1
         self.emergencyThreshold = 30
         self.emergencyTimeWindow = 60
+
+        while not rospy.is_shutdown():
+            try:
+                self.offsetXY = rospy.get_param('/base_scan/offset')
+                break
+            except:
+                rospy.loginfo('[shelf publisher]: waiting for base scan offset param')
+                rospy.sleep(random.uniform(0,1))
+                continue
 
         # backup human supervised info for emergency
         rp = rospkg.RosPack()
