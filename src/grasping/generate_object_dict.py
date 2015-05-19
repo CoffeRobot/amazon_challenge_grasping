@@ -59,27 +59,27 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        first_years_take_and_toss_straw_cup = objAttr('first_years_take_and_toss_straw_cup', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.15, False, 0)
+        first_years_take_and_toss_straw_cup = objAttr('first_years_take_and_toss_straw_cup', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.15, True, 0)
         self.dict['first_years_take_and_toss_straw_cup'] = first_years_take_and_toss_straw_cup
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kong_air_dog_squeakair_tennis_ball = objAttr('kong_air_dog_squeakair_tennis_ball', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, False, 0)
+        kong_air_dog_squeakair_tennis_ball = objAttr('kong_air_dog_squeakair_tennis_ball', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, True, 0)
         self.dict['kong_air_dog_squeakair_tennis_ball'] = kong_air_dog_squeakair_tennis_ball
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kong_duck_dog_toy = objAttr('kong_duck_dog_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, False, 0)
+        kong_duck_dog_toy = objAttr('kong_duck_dog_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['kong_duck_dog_toy'] = kong_duck_dog_toy
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kong_sitting_frog_dog_toy = objAttr('kong_sitting_frog_dog_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, False, 0)
+        kong_sitting_frog_dog_toy = objAttr('kong_sitting_frog_dog_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['kong_sitting_frog_dog_toy'] = kong_sitting_frog_dog_toy
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        kyjen_squeakin_eggs_plush_puppies = objAttr('kyjen_squeakin_eggs_plush_puppies', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, False, 0)
+        kyjen_squeakin_eggs_plush_puppies = objAttr('kyjen_squeakin_eggs_plush_puppies', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, True, 0)
         self.dict['kyjen_squeakin_eggs_plush_puppies'] = kyjen_squeakin_eggs_plush_puppies
 
 
@@ -95,7 +95,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, False, 0)
+        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['munchkin_white_hot_duck_bath_toy'] = munchkin_white_hot_duck_bath_toy
 
         invalidApproachAxis = [2]
@@ -105,7 +105,7 @@ class objDict:
 
         invalidApproachAxis = [0]
         invalidGraspAxis = [0]
-        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, False, 0)
+        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, True, 0)
         self.dict['paper_mate_12_count_mirado_black_warrior'] = paper_mate_12_count_mirado_black_warrior
 
         invalidApproachAxis = [2]
@@ -115,7 +115,7 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        stanley_66_052 = objAttr('stanley_66_052', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, False, 0)
+        stanley_66_052 = objAttr('stanley_66_052', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, True, 0)
         self.dict['stanley_66_052'] = stanley_66_052
 
         invalidApproachAxis = []
@@ -145,7 +145,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        highland_6539_self_stick_notes = objAttr('highland_6539_self_stick_notes', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, False, 0)
+        highland_6539_self_stick_notes = objAttr('highland_6539_self_stick_notes', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, True, 0)
         self.dict['highland_6539_self_stick_notes'] = highland_6539_self_stick_notes
 
         invalidApproachAxis = [2]
@@ -160,12 +160,12 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, False, 0)
+        munchkin_white_hot_duck_bath_toy = objAttr('munchkin_white_hot_duck_bath_toy', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, True, 0)
         self.dict['munchkin_white_hot_duck_bath_toy'] = munchkin_white_hot_duck_bath_toy
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        rolodex_jumbo_pencil_cup = objAttr('rolodex_jumbo_pencil_cup', invalidApproachAxis, invalidGraspAxis, [0], False, -0.15, False, 0)
+        rolodex_jumbo_pencil_cup = objAttr('rolodex_jumbo_pencil_cup', invalidApproachAxis, invalidGraspAxis, [0], False, -0.15, True, 0)
         self.dict['rolodex_jumbo_pencil_cup'] = rolodex_jumbo_pencil_cup
 
         invalidApproachAxis = []
