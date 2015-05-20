@@ -1,0 +1,6 @@
+# pose of the base w.r.t. shelf frame
+float64 x
+float64 y
+float64 theta
+---
+bool result

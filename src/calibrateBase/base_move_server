@@ -1,0 +1,74 @@
+#!/usr/bin/python
+
+
+import rospy
+from baseMove import baseMove
+from amazon_challenge_grasping.srv import BaseMove, BaseMoveResponse
+from std_srvs.srv import Empty, EmptyResponse
+
+class BaseMoveServer():
+    def __init__(self):
+        rospy.Service('/base_move_server/move', BaseMove, self.move_callback)
+        rospy.Service('/base_move_server/preempt', Empty, self.preempt_callback)
+
+        self._bm = baseMove(verbose=False)
+
+        while not rospy.is_shutdown():
+            try:
+                self._base_move_params = rospy.get_param('/base_move')
+                break
+            except:
+                rospy.sleep(random.uniform(0,2))
+                continue
+
+        self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
+        self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
+        self._bm.setLinearGain(self._base_move_params['linear_gain'])
+        self._bm.setAngularGain(self._base_move_params['angular_gain'])
+        self._preempt = False
+
+    def preempt_callback(self,req):
+        rospy.loginfo('[base_move]: preempted')
+        self._preempt = True
+        return EmptyResponse()
+
+    def move_callback(self, req):
+
+        rospy.loginfo('[base_move]: moving base to [x,y,theta]: [' + str(req.x) + ', ' +
+                      str(req.y) + ', ' + str(req.theta) + ']')
+
+        if req.x < -0.1-2.0+0.68*0.5+0.05 or req.x>-0.2-0.68*0.5:
+            rospy.logerr('[base_move]: trying to move base out of workcell in X direction')
+            return False
+
+        if req.y > 0.05 or req.y < -1.0+0.68*0.5:
+            rospy.logerr('[base_move]: trying to move base out of workcell in Y direction')
+            return False
+
+        if abs(req.theta)>10*3.1416/180.0:
+            rospy.logerr('[base_move]: trying to move base with wrong theta angle')
+            return False
+
+        r = rospy.Rate(20.0)
+
+        while not rospy.is_shutdown() and not self._preempt:
+            self._bm.goPosition([req.x, req.y], False)
+            r.sleep()
+
+        while not rospy.is_shutdown() and not self._preempt:
+            self._bm.goAngle(req.theta, False)
+            r.sleep()
+
+        if self._preempt:
+            self._preempt = False
+
+        return True
+
+
+
+if __name__ == '__main__':
+
+    rospy.init_node('base_move_server')
+
+    base_move_server = BaseMoveServer()
+    rospy.spin()

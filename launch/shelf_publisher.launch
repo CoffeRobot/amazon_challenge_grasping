@@ -1,5 +1,6 @@
 <launch>
 
 <node name="shelf_publisher" pkg="amazon_challenge_grasping" type="shelfPublisher.py" respawn="true" output="screen" />
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/base_scan.yaml" />
 
 </launch>

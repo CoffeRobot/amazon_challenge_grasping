@@ -75,7 +75,8 @@ class baseMove:
         rospy.loginfo('[base_move]: new delay ' + str(self.delay) + ' sec')
 
     def goPosition(self, position, wait=True):
-        self.update_delay()
+        if wait:
+            self.update_delay()
         s = Twist()
         while not rospy.is_shutdown():
             if wait:
@@ -146,7 +147,8 @@ class baseMove:
 
 
     def goAngle(self, angle, wait=True):
-        self.update_delay()
+        if wait:
+            self.update_delay()
         s = Twist()
         while not rospy.is_shutdown():
             if wait:

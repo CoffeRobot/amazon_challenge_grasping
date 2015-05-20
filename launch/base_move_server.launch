@@ -1,0 +1,4 @@
+<launch>
+  <node name="base_move_server" pkg="amazon_challenge_grasping" type="base_move_server" output="screen" />
+  <rosparam command="load" file="$(find amazon_challenge_grasping)/config/base_move.yaml" />
+</launch>
