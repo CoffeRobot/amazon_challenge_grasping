@@ -317,7 +317,6 @@ class baseScan:
 
             if not self.calibrated and ask:
                 emergencyCount += 1
-                print 'hagn mang emergency count ' , emergencyCount
                 if emergencyCount == self.emergencyThreshold:
                     self.loadEmergency()
                     self.odomL = self.emergency.odomL
