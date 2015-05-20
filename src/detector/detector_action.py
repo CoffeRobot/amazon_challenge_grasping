@@ -23,6 +23,8 @@ from grasping.generate_object_dict import *
 from calibrateBase import baseMove
 from amazon_challenge_bt_actions.srv import *
 import numpy as np
+#import amazon_challenge_grasping.msg  # contains the action message for receive_update
+from amazon_challenge_grasping.srv import *
 
 
 class superDetector(object):
@@ -57,6 +59,12 @@ class superDetector(object):
         self.simTrackUsed = True
         self.found = False
 
+        self.blindSegSrv = rospy.Service('blindSeg', blindSeg, self.replyBlindSeg)
+        self.blindObjects = []
+
+
+        
+        
         while not rospy.is_shutdown():
             try:
                 self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
@@ -91,6 +99,9 @@ class superDetector(object):
 
         self._as.start()
         rospy.loginfo('SuperDetector ready')
+
+    def replyBlindSeg(self,req):
+        return blindSegResponse(self.blindObjects)
 
     def flush(self):
         self._item = ""
@@ -314,6 +325,8 @@ class superDetector(object):
         return ret
     def receive_update(self,goal):
 
+        self.blindObjects = []
+
         rospy.sleep(1.0)
         self.updateBinItems()
 
@@ -338,9 +351,10 @@ class superDetector(object):
             if self.execute_exit():
                 return
 
-        self.objSrv.call(self._binItems)
+        # self.objSrv.call(self._binItems)
+        self.objSrv.call()
         rospy.loginfo('Let\'s give simtrack some time ......')
-        rospy.sleep(10.0)
+        # rospy.sleep(10.0)
 
         if simtrackEnabled:
             rospy.loginfo('try to update object pose with IMAX camera')
@@ -382,6 +396,9 @@ class superDetector(object):
                 return
         
         foundItems, refs = self.getAllSimtrackItems()
+
+        if len(self._binItems) - len(foundItems) == 2:
+            self.blindObjects = [item for item in self._binItems if item not in foundItems]
 
         if len(self._binItems) - len(foundItems) > 2:
             rospy.logerr('Do not have enough info for reasoning in object segmentation')

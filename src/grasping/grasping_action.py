@@ -23,7 +23,8 @@ import amazon_challenge_bt_actions.msg
 from grasping.generate_object_dict import *
 import random
 from simtrack_nodes.srv import SwitchObjects
-
+from amazon_challenge_grasping.srv import *
+from amazon_challenge_bt_actions.srv import *
 
 class BTAction(object):
     # create messages that are used to publish feedback/result
@@ -39,6 +40,7 @@ class BTAction(object):
         self.pub_rate = rospy.Rate(30)
         self.poseFromSimtrack = True
         self.xLength = 0
+        self._binItems = []
 
 
 
@@ -147,6 +149,14 @@ class BTAction(object):
             except:
                 rospy.sleep(random.uniform(0,2))
                 pass
+
+        while not rospy.is_shutdown():
+            try:
+                self.blindSegSrv = rospy.ServiceProxy('blindSeg', blindSeg)
+                self.binSrv = rospy.ServiceProxy('bin_trigger', BinTrigger)
+                break
+            except:
+                rospy.sleep(0.4)
 
         self._as.start()
         rospy.loginfo('Grasping action ready')
@@ -286,13 +296,44 @@ class BTAction(object):
                 rospy.logerr('No strategy found to grasp')
                 self.set_status('FAILURE')
 
+        blindObjs = self.blindSegSrv.call()
+        rospy.loginfo('blind objects num: %d' % len(blindObjs))
+
         if status:
-            self.set_status('SUCCESS')
+            if len(blindObjs) == 2:
+                rmIdx = 0
+                for it in self._binItems:
+                    if it in blindObjs and it != self._item:
+                        self.removeBlindObj(rmIdx, it)
+                        break
+                    rmIdx++
+                self.set_status('FAILURE')
+            else:
+                self.set_status('SUCCESS')
         else:
             self.set_status('FAILURE')
         self.timer.shutdown()
         return
 
+    def updateBinItems(self):
+        text = self.binSrv.call()
+        text = text.message
+        self._binItems = []
+        for it in text:
+            self._binItems.append(it)
+        rospy.loginfo('bin_items updated')
+
+    def removeBlindObj(self, idx, objName):
+        rospy.loginfo('removing: %s' % objName)
+        client = actionlib.SimpleActionClient('objectslist', amazon_challenge_bt_actions.msg.ObjectsListAction)
+
+        # Waits until the action server has started up and started
+        # listening for goals.
+        client.wait_for_server()
+
+        # Creates a goal to send to the action server.
+        goal = amazon_challenge_bt_actions.msg.ObjectsListGoal(parameter=idx)
+        rospy.loginfo('Successfully removed a blind object')
 
     def topGrasping(self):
 
