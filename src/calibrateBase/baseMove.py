@@ -35,6 +35,8 @@ class baseMove:
         self.move = False
         self.walltime = rospy.Time.now()
 
+        self.delay = 0.0
+
         self.source = 1 # 0 for tf tree and 1 for pubShelfSep
 
     def setPosTolerance(self, t):
@@ -58,8 +60,22 @@ class baseMove:
         self.move = True
 
 
+    def update_delay(self):
+        measurements = 0
+        self.delay = 0.0
+        r = rospy.Rate(20.0)
+        while not rospy.is_shutdown() and measurements<10:
+            self.delay += (rospy.Time.now() - self.walltime).to_sec()
+
+            measurements += 1
+            r.sleep()
+
+        self.delay /= 10
+
+        rospy.loginfo('[base_move]: new delay ' + str(self.delay) + ' sec')
 
     def goPosition(self, position, wait=True):
+        self.update_delay()
         s = Twist()
         while not rospy.is_shutdown():
             if wait:
@@ -78,7 +94,7 @@ class baseMove:
 
             elif self.source == 1:
 
-                if (rospy.Time.now() - self.walltime).to_sec() > 1.0:
+                if (rospy.Time.now() - self.walltime).to_sec() > 0.4 + self.delay:
                     rospy.logerr('[baseMove]: old shelf pose message, time diff ' + str((rospy.Time.now()-self.walltime).to_sec()))
                     self.move = False
                 # self.move=True
@@ -130,6 +146,7 @@ class baseMove:
 
 
     def goAngle(self, angle, wait=True):
+        self.update_delay()
         s = Twist()
         while not rospy.is_shutdown():
             if wait:
@@ -147,7 +164,7 @@ class baseMove:
 
             elif self.source == 1:
 
-                if (rospy.Time.now() - self.walltime).to_sec() > 1.0:
+                if (rospy.Time.now() - self.walltime).to_sec() > 0.4 + self.delay:
                     rospy.logerr('[baseMove]: old shelf pose message, time diff ' + str((rospy.Time.now()-self.walltime).to_sec()))
                     self.move = False
                 # self.move=True

@@ -8,7 +8,6 @@ from sensor_msgs.msg import LaserScan, JointState
 from laser_geometry import LaserProjection
 import sensor_msgs.point_cloud2 as pc2
 import math
-from termcolor import colored
 from geometry_msgs.msg import PoseStamped
 from select import select
 import sys
@@ -17,6 +16,7 @@ from collections import namedtuple
 import rospkg
 from grasping.myTypes import *
 import random
+from std_srvs.srv import Empty, EmptyResponse
 
 # assuming there is already a ros node, do not init one here
 
@@ -52,7 +52,7 @@ class baseScan:
         self.asyncRate = 20
         self.limitInitX = True
         self.xLimit = 0.1
-        self.emergencyThreshold = 30
+        self.emergencyThreshold = 30*20
         self.emergencyTimeWindow = 60
 
         while not rospy.is_shutdown():
@@ -63,6 +63,9 @@ class baseScan:
                 rospy.loginfo('[shelf publisher]: waiting for base scan offset param')
                 rospy.sleep(random.uniform(0,1))
                 continue
+
+        self.start_srv = rospy.Service(rospy.get_name() + '/start', Empty, self.start_srv_callback)
+        self._start = False
 
         # backup human supervised info for emergency
         rp = rospkg.RosPack()
@@ -75,6 +78,13 @@ class baseScan:
         self.fileName = dict_fp + '/config/shelf_emergency.dat'
         self.emergency = {}
 
+
+    def start_srv_callback(self, req):
+        rospy.loginfo('[shelf_publisher]: starting shelf publisher!')
+        if self._start:
+            rospy.logwarn('[shelf_publisher]: already started!!!!')
+        self._start = True
+        return EmptyResponse()
 
     def raw_input_with_timeout(prompt, timeout=1.0):
         print prompt,    
@@ -307,6 +317,7 @@ class baseScan:
 
             if not self.calibrated and ask:
                 emergencyCount += 1
+                print 'hagn mang emergency count ' , emergencyCount
                 if emergencyCount == self.emergencyThreshold:
                     self.loadEmergency()
                     self.odomL = self.emergency.odomL
@@ -336,11 +347,10 @@ class baseScan:
                 else:
                     sys.stdout.write("\r [ROS time: %s] Is the current shelf pose estimation good? (y/n)" % rospy.get_time() )
                     sys.stdout.flush()
-                    i, o, e = select( [sys.stdin], [], [], 1)
-                    if (i):
-                        answer = sys.stdin.readline().strip()
-                    else:
-                        continue
+
+
+                    if self._start:
+                        answer = 'y'
 
                     if answer == 'y' or answer == 'yes':
                         self.calibrated = True

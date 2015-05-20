@@ -339,7 +339,8 @@ class superDetector(object):
                 return
 
         self.objSrv.call(self._binItems)
-        # raw_input('press to continue')
+        rospy.loginfo('Let\'s give simtrack some time ......')
+        rospy.sleep(10.0)
 
         if simtrackEnabled:
             rospy.loginfo('try to update object pose with IMAX camera')
