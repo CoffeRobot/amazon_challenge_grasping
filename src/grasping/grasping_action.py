@@ -23,6 +23,7 @@ import amazon_challenge_bt_actions.msg
 from grasping.generate_object_dict import *
 import random
 from simtrack_nodes.srv import SwitchObjects
+from geometry_msgs.msg import PoseStamped
 
 
 class BTAction(object):
@@ -148,6 +149,9 @@ class BTAction(object):
                 rospy.sleep(random.uniform(0,2))
                 pass
 
+        self._shelf_pose_sub = rospy.Subscriber("/pubShelfSep", PoseStamped, self.get_shelf_pose)
+        self._got_shelf_pose = False
+
         self._as.start()
         rospy.loginfo('Grasping action ready')
 
@@ -155,6 +159,23 @@ class BTAction(object):
         self._item = ""
         self._bin = ""
         self.objSpec = {}
+
+    def get_shelf_pose(self, msg):
+        self._shelf_pose = msg
+        self._got_shelf_pose = True
+
+    def get_bm_srv(self):
+        while not rospy.is_shutdown():
+            try:
+                rospy.wait_for_service('/base_move_server/move', 5.0)
+                rospy.wait_for_service('/base_move_server/preempt', 5.0)
+                break
+            except:
+                rospy.loginfo('[' + rospy.get_name() + ']: waiting for base move server')
+                continue
+
+        self._bm_move_srv = rospy.ServiceProxy('/base_move_server/move', BaseMove)
+        self._bm_preempt_srv = rospy.ServiceProxy('/base_move_server/preempt', Empty)
 
     def transformPoseToRobotFrame(self, planPose, planner_frame):
 
@@ -182,7 +203,9 @@ class BTAction(object):
         return tf.transformations.euler_from_quaternion([q[0], q[1], q[2], q[3]])
 
 
+
     def timer_callback(self, event):
+        self.preempted = True
         rospy.logerr('[' + rospy.get_name() + ']: TIMED OUT!')
 
         # pull the base back 60 cm
@@ -190,11 +213,24 @@ class BTAction(object):
         self.left_arm.stop()
         self.right_arm.stop()
 
-        base_pos_goal = [-1.42, self._bm.trans[1], self._bm.trans[2], 0.0, 0.0, 0.0]
+        r = rospy.Rate(1.0)
+        while not self._got_shelf_pose:
+            rospy.loginfo('[' + rospy.get_name() + ']: waiting for shelf pose')
+            r.sleep()
 
-        self._bm.goAngle(base_pos_goal[5])
-        self._bm.goPosition(base_pos_goal[0:2])
-        self._bm.goAngle(base_pos_goal[5])
+        base_pos_goal = [-1.42, -self._shelf_pose.pose.position.y, 0.0, 0.0, 0.0, 0.0]
+
+        angle = base_pos_goal[5]
+        pos = base_pos_goal[0:2]
+
+        req = BaseMoveRequest()
+        req.x = pos[0]
+        req.y = pos[1]
+        req.theta = angle
+
+        self.get_bm_srv()
+        self._bm_preempt_srv.call(EmptyRequest())
+        res = self._bm_move_srv.call(req)
 
         left_arm_joint_pos_goal = self.left_arm_joint_pos_dict['start']
         right_arm_joint_pos_goal = self.right_arm_joint_pos_dict['start']

@@ -20,10 +20,10 @@ from simtrack_nodes.srv import *
 from vision.srv import StartAggregator
 import random
 from grasping.generate_object_dict import *
-from calibrateBase import baseMove
+from amazon_challenge_grasping.srv import BaseMove, BaseMoveRequest
 from amazon_challenge_bt_actions.srv import *
 import numpy as np
-
+from geometry_msgs.msg import PoseStamped
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
@@ -53,6 +53,8 @@ class superDetector(object):
         self.preempted = False
         
         self.get_services()
+        self._shelf_pose_sub = rospy.Subscriber("/pubShelfSep", PoseStamped, self.get_shelf_pose)
+        self._got_shelf_pose = False
         
         self.simTrackUsed = True
         self.found = False
@@ -63,7 +65,6 @@ class superDetector(object):
                 self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
                 self.torso_joint_pos_dict = rospy.get_param('/torso_joint_pos_dict')
                 self._timeout = rospy.get_param(rospy.get_name() + '/timeout')
-                self._base_move_params = rospy.get_param('/base_move')
                 self.base_pos_dict = rospy.get_param('/base_pos_dict')
                 self.dictObj = objDict()
                 break
@@ -79,11 +80,6 @@ class superDetector(object):
                 self.right_arm = self.robot.get_group('right_arm')
                 self.torso = self.robot.get_group('torso')
                 self._arms = self.robot.get_group('arms')
-                self._bm = baseMove.baseMove(verbose=False)
-                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
-                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
-                self._bm.setLinearGain(self._base_move_params['linear_gain'])
-                self._bm.setAngularGain(self._base_move_params['angular_gain'])
                 break
             except:
                 rospy.sleep(random.uniform(0,2))
@@ -96,6 +92,23 @@ class superDetector(object):
         self._item = ""
         self._bin = ""
         self._binItems = []
+
+    def get_shelf_pose(self, msg):
+        self._shelf_pose = msg
+        self._got_shelf_pose = True
+
+    def get_bm_srv(self):
+        while not rospy.is_shutdown():
+            try:
+                rospy.wait_for_service('/base_move_server/move', 5.0)
+                rospy.wait_for_service('/base_move_server/preempt', 5.0)
+                break
+            except:
+                rospy.loginfo('[' + rospy.get_name() + ']: waiting for base move server')
+                continue
+
+        self._bm_move_srv = rospy.ServiceProxy('/base_move_server/move', BaseMove)
+        self._bm_preempt_srv = rospy.ServiceProxy('/base_move_server/preempt', Empty)
 
     def get_services(self):
         while not rospy.is_shutdown():
@@ -274,11 +287,24 @@ class superDetector(object):
         self.left_arm.stop()
         self.right_arm.stop()
 
-        base_pos_goal = [-1.42, self._bm.trans[1], self._bm.trans[2], 0.0, 0.0, 0.0]
+        r = rospy.Rate(1.0)
+        while not self._got_shelf_pose:
+            rospy.loginfo('[' + rospy.get_name() + ']: waiting for shelf pose')
+            r.sleep()
 
-        self._bm.goAngle(base_pos_goal[5])
-        self._bm.goPosition(base_pos_goal[0:2])
-        self._bm.goAngle(base_pos_goal[5])
+        base_pos_goal = [-1.42, -self._shelf_pose.pose.position.y, 0.0, 0.0, 0.0, 0.0]
+
+        angle = base_pos_goal[5]
+        pos = base_pos_goal[0:2]
+
+        req = BaseMoveRequest()
+        req.x = pos[0]
+        req.y = pos[1]
+        req.theta = angle
+
+        self.get_bm_srv()
+        self._bm_preempt_srv.call(EmptyRequest())
+        res = self._bm_move_srv.call(req)
 
         left_arm_joint_pos_goal = self.left_arm_joint_pos_dict['start']
         right_arm_joint_pos_goal = self.right_arm_joint_pos_dict['start']
