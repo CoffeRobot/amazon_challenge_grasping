@@ -1,0 +1,5 @@
+<launch>
+
+<node name="shelf_publisher" pkg="amazon_challenge_grasping" type="shelfPublisher.py" respawn="true" output="screen" />
+
+</launch>
