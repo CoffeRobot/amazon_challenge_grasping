@@ -1,5 +1,5 @@
 base_move:
   pos_tolerance: 0.02
   ang_tolerance: 0.006
-  linear_gain: 0.6
-  angular_gain: 1.0
+  linear_gain: 1.0
+  angular_gain: 1.3

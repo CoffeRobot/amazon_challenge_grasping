@@ -409,6 +409,7 @@ class superDetector(object):
 
 
 
+
         rospy.loginfo('try to update object pose with point cloud segmentation')
 
 
@@ -420,6 +421,16 @@ class superDetector(object):
                 return
         
         foundItems, refs = self.getAllSimtrackItems()
+
+        if len(self._binItems) == len(foundItems):
+            if not self.preempted:
+                self.set_status('FAILURE')
+            else:
+                self.setFailureOnExit()
+            self.updating = False
+            self.timer.shutdown()
+            self.lock.release()
+
 
         if len(self._binItems) - len(foundItems) == 2:
             self.blindObjects = [item for item in self._binItems if item not in foundItems]
@@ -515,6 +526,7 @@ class superDetector(object):
         zVariance = self.variance(Zs)
 
         if xVariance > self.vThresh or yVariance > self.vThresh or zVariance > self.vThresh:
+            rospy.logerr('[superDetector]: pose validation failed')
             return False
         else:
             return True

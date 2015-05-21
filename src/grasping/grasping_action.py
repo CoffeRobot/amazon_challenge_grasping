@@ -26,6 +26,7 @@ from geometry_msgs.msg import PoseStamped
 from amazon_challenge_grasping.srv import *
 from amazon_challenge_bt_actions.srv import *
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
+import copy
 
 
 class BTAction(object):
@@ -531,8 +532,9 @@ class BTAction(object):
                 try:
                     column = self.get_column()
                     base_pos_goal = self.base_pos_dict[column]
-                    base_pos_goal[0] -= abs(self.base_retreat_distance)
-                    self.go_base_pos_async(base_pos_goal)
+                    new_base_pose = copy.deepcopy(base_pos_goal)
+                    new_base_pose[0] -= abs(self.base_retreat_distance)
+                    self.go_base_pos_async(new_base_pose)
                 except Exception, e:
                     self.open_left_gripper()
 
@@ -725,8 +727,9 @@ class BTAction(object):
             try:
                 column = self.get_column()
                 base_pos_goal = self.base_pos_dict[column]
-                base_pos_goal[0] -= abs(self.base_retreat_distance)
-                self.go_base_pos_async(base_pos_goal)
+                new_base_pose = copy.deepcopy(base_pos_goal)
+                new_base_pose[0] -= abs(self.base_retreat_distance)
+                self.go_base_pos_async(new_base_pose)
             except Exception, e:
                 # rospy.logerr(e)
                 self.flush()
