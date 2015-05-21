@@ -8,7 +8,6 @@ import actionlib
 import amazon_challenge_bt_actions.msg
 
 import grasping.grasping_lib as grasping_lib
-from std_srvs.srv import Empty, EmptyRequest
 
 
 from std_msgs.msg import String
@@ -21,11 +20,11 @@ from simtrack_nodes.srv import *
 from vision.srv import StartAggregator
 import random
 from grasping.generate_object_dict import *
-from amazon_challenge_grasping.srv import BaseMove, BaseMoveResponse, BaseMoveRequest
 from amazon_challenge_bt_actions.srv import *
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 import numpy as np
 from geometry_msgs.msg import PoseStamped
+from amazon_challenge_grasping.srv import *
 
 class superDetector(object):
     # create messages that are used to publish feedback/result
@@ -61,6 +60,12 @@ class superDetector(object):
         self.simTrackUsed = True
         self.found = False
 
+        self.blindSegSrv = rospy.Service('blindSeg', blindSeg, self.replyBlindSeg)
+        self.blindObjects = []
+
+
+        
+        
         while not rospy.is_shutdown():
             try:
                 self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
@@ -89,6 +94,9 @@ class superDetector(object):
 
         self._as.start()
         rospy.loginfo('SuperDetector ready')
+
+    def replyBlindSeg(self,req):
+        return blindSegResponse(self.blindObjects)
 
     def flush(self):
         self._item = ""
@@ -342,6 +350,8 @@ class superDetector(object):
         return ret
     def receive_update(self,goal):
 
+        self.blindObjects = []
+
         rospy.sleep(1.0)
         self.updateBinItems()
 
@@ -368,7 +378,7 @@ class superDetector(object):
 
         self.objSrv.call(self._binItems)
         rospy.loginfo('Let\'s give simtrack some time ......')
-        rospy.sleep(10.0)
+        rospy.sleep(15.0)
 
         if simtrackEnabled:
             rospy.loginfo('try to update object pose with IMAX camera')
@@ -410,6 +420,9 @@ class superDetector(object):
                 return
         
         foundItems, refs = self.getAllSimtrackItems()
+
+        if len(self._binItems) - len(foundItems) == 2:
+            self.blindObjects = [item for item in self._binItems if item not in foundItems]
 
         if len(self._binItems) - len(foundItems) > 2:
             rospy.logerr('Do not have enough info for reasoning in object segmentation')
