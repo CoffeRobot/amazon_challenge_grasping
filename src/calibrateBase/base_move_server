@@ -5,6 +5,7 @@ import rospy
 from baseMove import baseMove
 from amazon_challenge_grasping.srv import BaseMove, BaseMoveResponse
 from std_srvs.srv import Empty, EmptyResponse
+import random
 
 class BaseMoveServer():
     def __init__(self):
