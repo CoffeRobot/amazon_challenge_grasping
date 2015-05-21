@@ -660,11 +660,11 @@ class BTAction(object):
             rospy.loginfo('LIFTING')
 
             if self.get_row() == 'row_1':
-                curr_joints = left_arm.get_current_joint_values()
+                curr_joints = self.left_arm.get_current_joint_values()
                 curr_joints[5] = self.sideGraspingRow1_liftAngle
-                left_arm.set_joint_value_target(curr_joints)
+                self.left_arm.set_joint_value_target(curr_joints)
                 try:
-                    left_arm.go()
+                    self.left_arm.go()
                 except:
                     self.open_left_gripper()
                     rospy.logerr('exception in LIFTING')
