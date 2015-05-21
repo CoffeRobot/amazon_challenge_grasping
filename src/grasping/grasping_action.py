@@ -17,13 +17,14 @@ from pr2_controllers_msgs.msg import Pr2GripperCommand, JointControllerState
 from geometry_msgs.msg import Pose, PoseStamped
 from tf_conversions import posemath
 import math
-from calibrateBase import baseMove
 from amazon_challenge_motion.bt_motion import BTMotion
 import amazon_challenge_bt_actions.msg
 from grasping.generate_object_dict import *
 import random
 from simtrack_nodes.srv import SwitchObjects
 from geometry_msgs.msg import PoseStamped
+from amazon_challenge_grasping.srv import BaseMove, BaseMoveResponse, BaseMoveRequest
+from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
 
 
 class BTAction(object):
@@ -111,7 +112,6 @@ class BTAction(object):
         # get base_move parameters
         while not rospy.is_shutdown():
             try:
-                self._base_move_params = rospy.get_param('/base_move')
                 self.base_pos_dict = rospy.get_param('/base_pos_dict')
                 self.left_arm_joint_pos_dict = rospy.get_param('/left_arm_joint_pos_dict')
                 self.right_arm_joint_pos_dict = rospy.get_param('/right_arm_joint_pos_dict')
@@ -139,11 +139,6 @@ class BTAction(object):
                 self.left_arm = self.robot.get_group('left_arm')
                 self.right_arm = self.robot.get_group('right_arm')
                 self._arms = self.robot.get_group('arms')
-                self._bm = baseMove.baseMove(verbose=False)
-                self._bm.setPosTolerance(self._base_move_params['pos_tolerance'])
-                self._bm.setAngTolerance(self._base_move_params['ang_tolerance'])
-                self._bm.setLinearGain(self._base_move_params['linear_gain'])
-                self._bm.setAngularGain(self._base_move_params['angular_gain'])
                 break
             except:
                 rospy.sleep(random.uniform(0,2))
@@ -802,50 +797,27 @@ class BTAction(object):
         pos = base_pos_goal[0:2]
         r = rospy.Rate(20.0)
 
-        # check for preemption while the base hasn't reach goal configuration
-        while not self._bm.goAngle(angle) and not rospy.is_shutdown():
+        req = BaseMoveRequest()
+        req.x = pos[0]
+        req.y = pos[1]
+        req.theta = angle
 
-            # check that preempt has not been requested by the client
-            if self._as.is_preempt_requested():
-                #HERE THE CODE TO EXECUTE WHEN THE  BEHAVIOR TREE DOES HALT THE ACTION
-                group.stop()
-                rospy.loginfo('[pregrasp_server]: action halted while moving base')
-                self._as.set_preempted()
-                self._success = False
+        self.get_bm_srv()
+        res = self._bm_move_srv.call(req)
+
+        if self.execute_exit():
                 return False
 
-            #HERE THE CODE TO EXECUTE AS LONG AS THE BEHAVIOR TREE DOES NOT HALT THE ACTION
-            r.sleep()
-
-        while not self._bm.goPosition(pos) and not rospy.is_shutdown():
-
-            # check that preempt has not been requested by the client
-            if self._as.is_preempt_requested():
-                #HERE THE CODE TO EXECUTE WHEN THE  BEHAVIOR TREE DOES HALT THE ACTION
-                group.stop()
-                rospy.loginfo('[pregrasp_server]: action halted while moving base')
-                self._as.set_preempted()
-                self._success = False
+        # check that preempt has not been requested by the client
+        if self._as.is_preempt_requested():
+            #HERE THE CODE TO EXECUTE WHEN THE  BEHAVIOR TREE DOES HALT THE ACTION
+            rospy.loginfo('action halted while moving base')
+            self._as.set_preempted()
+            self._exit = True
+            if self.execute_exit():
                 return False
 
-            #HERE THE CODE TO EXECUTE AS LONG AS THE BEHAVIOR TREE DOES NOT HALT THE ACTION
-            r.sleep()
-
-        while not self._bm.goAngle(angle) and not rospy.is_shutdown():
-
-            # check that preempt has not been requested by the client
-            if self._as.is_preempt_requested():
-                #HERE THE CODE TO EXECUTE WHEN THE  BEHAVIOR TREE DOES HALT THE ACTION
-                group.stop()
-                rospy.loginfo('[pregrasp_server]: action halted while moving base')
-                self._as.set_preempted()
-                self._success = False
-                return False
-
-            #HERE THE CODE TO EXECUTE AS LONG AS THE BEHAVIOR TREE DOES NOT HALT THE ACTION
-            r.sleep()
-
-        return True
+        return res.result
 
     def get_column(self):
         '''
