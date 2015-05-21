@@ -170,7 +170,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        safety_works_safety_glasses = objAttr('safety_works_safety_glasses', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, False, 0)
+        safety_works_safety_glasses = objAttr('safety_works_safety_glasses', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['safety_works_safety_glasses'] = safety_works_safety_glasses
 
         # this is here just for safety
