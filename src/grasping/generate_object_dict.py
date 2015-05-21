@@ -44,7 +44,7 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, [0], True, -0.2, True, 0.11)
+        cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, [0], True, -0.24, True, 0.11)
         self.dict['cheezit_big_original'] = cheezit_big_original
 
         invalidApproachAxis = [2]

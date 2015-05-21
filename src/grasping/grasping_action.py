@@ -631,6 +631,7 @@ class BTAction(object):
 
             rospy.logerr(yaw_now)
             if self.get_row() == 'row_1':
+                rospy.loginfo('row_1 grasping')
                 pre_pose = kdl.Frame(kdl.Rotation.RPY(0, math.radians(self.sideGraspingRow1_pitch), yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, self.sideGraspingRow1_height))
             else:
                 pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, bookZ))
@@ -650,7 +651,7 @@ class BTAction(object):
             '''
             REACHING
             '''
-            row_1_reach = 
+            # row_1_reach = 
             rospy.loginfo('REACHING')
             if self.poseFromSimtrack:
                 if self.get_row == 'row_1':
