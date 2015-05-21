@@ -23,8 +23,13 @@ from grasping.generate_object_dict import *
 import random
 from simtrack_nodes.srv import SwitchObjects
 from geometry_msgs.msg import PoseStamped
+<<<<<<< HEAD
 from amazon_challenge_grasping.srv import BaseMove, BaseMoveResponse, BaseMoveRequest
 from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
+=======
+from std_srvs.srv import Empty, EmptyRequest
+
+>>>>>>> cd72b6169781ee3a1a0dde51ab07969d1ab7cc8e
 
 
 class BTAction(object):
