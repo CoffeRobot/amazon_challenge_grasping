@@ -296,20 +296,12 @@ class BTAction(object):
                 rospy.logerr('No strategy found to grasp')
                 self.set_status('FAILURE')
 
-        blindObjs = self.blindSegSrv.call()
+        blindObjs = self.parseBlindObjs(self.blindSegSrv.call())
+
         rospy.loginfo('blind objects num: %d' % len(blindObjs))
 
         if status:
-            if len(blindObjs) == 2:
-                rmIdx = 0
-                for it in self._binItems:
-                    if it in blindObjs and it != self._item:
-                        self.removeBlindObj(rmIdx, it)
-                        break
-                    rmIdx++
-                self.set_status('FAILURE')
-            else:
-                self.set_status('SUCCESS')
+            self.set_status('SUCCESS')
         else:
             self.set_status('FAILURE')
         self.timer.shutdown()
@@ -335,6 +327,8 @@ class BTAction(object):
         goal = amazon_challenge_bt_actions.msg.ObjectsListGoal(parameter=idx)
         rospy.loginfo('Successfully removed a blind object')
 
+    def parseBlindObjs(self, msg):
+        return msg.message
     def topGrasping(self):
 
         r = rospy.Rate(1.0)

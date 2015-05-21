@@ -1,4 +1,4 @@
-max_effort: &max_effort 40.0
+max_effort: &max_effort 60.0
 
 grasp_max_effort_dict:
 
