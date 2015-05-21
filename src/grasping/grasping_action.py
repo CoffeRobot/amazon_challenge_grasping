@@ -139,7 +139,7 @@ class BTAction(object):
                 self.left_arm = self.robot.get_group('left_arm')
                 self.right_arm = self.robot.get_group('right_arm')
                 self._arms = self.robot.get_group('arms')
-                break
+				break
             except:
                 rospy.sleep(random.uniform(0,2))
                 pass
