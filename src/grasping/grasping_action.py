@@ -91,6 +91,7 @@ class BTAction(object):
         self.sideGraspingRow1_pitch = self.grasping_param_dict['sideGraspingRow1_pitch']
         self.sideGraspingRow1_reach = self.grasping_param_dict['sideGraspingRow1_reach']
         self.sideGraspingRow1_liftAngle = self.grasping_param_dict['sideGraspingRow1_liftAngle']
+        self.sideGraspingRow1_height = self.grasping_param_dict['sideGraspingRow1_height']
         self.sideGraspingBookX = self.grasping_param_dict['sideGraspingBookX']
         self.sideGraspingBookY = self.grasping_param_dict['sideGraspingBookY']
         self.sideGraspingBookZ = self.grasping_param_dict['sideGraspingBookZ']
@@ -630,7 +631,7 @@ class BTAction(object):
 
             rospy.logerr(yaw_now)
             if self.get_row() == 'row_1':
-                pre_pose = kdl.Frame(kdl.Rotation.RPY(0, math.radians(self.sideGraspingRow1_pitch), yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, binFrame[0][2]/2))
+                pre_pose = kdl.Frame(kdl.Rotation.RPY(0, math.radians(self.sideGraspingRow1_pitch), yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, self.sideGraspingRow1_height))
             else:
                 pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, bookZ))
 
@@ -649,16 +650,17 @@ class BTAction(object):
             '''
             REACHING
             '''
+            row_1_reach = 
             rospy.loginfo('REACHING')
             if self.poseFromSimtrack:
                 if self.get_row == 'row_1':
-                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( - binFrame[0][0]/2, bookY, binFrame[0][2]/2))
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( bookX, bookY, self.sideGraspingRow1_height))
                 else:
                     reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( bookX, bookY, bookZ))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
             else:
                 if self.get_row() == 'row_1':
-                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( bookX, bookY, binFrame[0][2]/2))
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( self.sideGraspingSegReach + bookX, bookY, self.sideGraspingRow1_height))
                 else:
                     reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach + bookX, bookY, 0))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
