@@ -4,6 +4,7 @@
   <arg name="timeout" default="120.0"/>
   <arg name="vision" default="true"/>
 
+  <rosparam command="load" file="$(find vision)/config/segmentation.yaml"/>
 
   <include file="$(find vision)/launch/laser_assembler.launch" if="$(arg vision)"/>
 
