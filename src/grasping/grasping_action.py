@@ -382,7 +382,7 @@ class BTAction(object):
                 try:
                     tp = self.listener.lookupTransform('/base_link', "/" + self._item + "_detector_seg", rospy.Time(0))
                     binFrame = self.listener.lookupTransform("/" + "shelf_" + self._bin, "/" + self._item + "_detector_seg", rospy.Time(0))
-                    liftShift = 0.15 - binFrame[0][1]
+                    liftShift = 0.13 - binFrame[0][1]
                     rospy.loginfo('got new object pose')
                     tpRPY = self.RPYFromQuaternion(tp[1])
                     self.poseFromSimtrack = False
@@ -511,8 +511,11 @@ class BTAction(object):
                 '''
                 LIFTING
                 '''
+                if self._item == 'dr_browns_bottle_brush':
+                    lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.topGraspingLiftingHeight + 0.04))
+                else:
+                    lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.topGraspingLiftingHeight))
 
-                lifting_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + liftShift, tp[0][2] + self.topGraspingLiftingHeight))
                 
 
 
@@ -583,7 +586,7 @@ class BTAction(object):
         self.open_left_gripper()
         row_height = self.grasping_param_dict['row_height'][self.get_row()]
 
-        if self._item == 'laugh_out_loud_joke_book' or self._item == 'mark_twain_huckleberry_finn':
+        if self._item == 'laugh_out_loud_joke_book' or self._item == 'mark_twain_huckleberry_finn' or self._item == 'stanley_66_052' or self._item == 'sharpie_accent_tank_style_highlighters':
             if binFrame[0][1] > 0.14:
                 bookX = self.sideGraspingBookX
                 bookY = self.sideGraspingBookY
@@ -634,7 +637,7 @@ class BTAction(object):
             rospy.logerr(yaw_now)
             if self.get_row() == 'row_1':
                 rospy.loginfo('row_1 grasping')
-                pre_pose = kdl.Frame(kdl.Rotation.RPY(0, math.radians(self.sideGraspingRow1_pitch), yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, self.sideGraspingRow1_height))
+                pre_pose = kdl.Frame(kdl.Rotation.RPY(0, math.radians(self.sideGraspingRow1_pitch), yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, bookZ))
             else:
                 pre_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( x_shift_now, y_shift_now + bookY, bookZ))
 
@@ -657,13 +660,13 @@ class BTAction(object):
             rospy.loginfo('REACHING')
             if self.poseFromSimtrack:
                 if self.get_row == 'row_1':
-                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( bookX, bookY, self.sideGraspingRow1_height))
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( bookX, bookY, bookZ))
                 else:
                     reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( bookX, bookY, bookZ))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)
             else:
                 if self.get_row() == 'row_1':
-                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( self.sideGraspingSegReach + bookX, bookY, self.sideGraspingRow1_height))
+                    reaching_pose = kdl.Frame(kdl.Rotation.RPY(math.radians(self.sideGraspingRow1_pitch), 0, yaw_now), kdl.Vector( self.sideGraspingSegReach + bookX, bookY, bookZ))
                 else:
                     reaching_pose = kdl.Frame(kdl.Rotation.RPY(0, 0, yaw_now), kdl.Vector( self.sideGraspingSegReach + bookX, bookY, 0))
                 reaching_pose_robot = self.transformPoseToRobotFrame(reaching_pose, planner_frame)

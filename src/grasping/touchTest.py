@@ -110,7 +110,7 @@ def touchRowBottom(torso_group, left_arm_group, row, ft = False):
             pr2_moveit_utils.go_tool_frame(left_arm_group, touching_pose, base_frame_id = base_frame_id, ft = ft,
                                                        wait=True, tool_x_offset = tool_size[0])
         except:
-            rospy.logerr('best touch height found is: %4f' % height)
+            rospy.logerr('best touch height found is (heigher than expected): %4f' % height)
             return
 
     rospy.logerr('best touch height found is: %4f' % height)
