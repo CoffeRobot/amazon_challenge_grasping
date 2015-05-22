@@ -599,6 +599,9 @@ class BTAction(object):
             bookX = 0
             bookY = 0
             bookZ = 0
+
+        if self._item == 'sharpie_accent_tank_style_highlighters':
+            bookz = 0.03
             
         if tp[0][2] - row_height < 0.03:
             rospy.logerr('object center too low for sideGrasping')

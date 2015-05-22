@@ -35,7 +35,7 @@ grasp_check_dict:
     angle_threshold: *angle_threshold
 
   sharpie_accent_tank_style_highlighters:
-    check_gripper_angle: true
+    check_gripper_angle: false
     angle_threshold: *angle_threshold
 
   stanley_66_052:
