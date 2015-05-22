@@ -44,7 +44,7 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, [0], True, -0.2, True, 0.11)
+        cheezit_big_original = objAttr('cheezit_big_original', invalidApproachAxis, invalidGraspAxis, [0], True, -0.24, True, 0.11)
         self.dict['cheezit_big_original'] = cheezit_big_original
 
         invalidApproachAxis = [2]
@@ -170,7 +170,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        safety_works_safety_glasses = objAttr('safety_works_safety_glasses', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, False, 0)
+        safety_works_safety_glasses = objAttr('safety_works_safety_glasses', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['safety_works_safety_glasses'] = safety_works_safety_glasses
 
         # this is here just for safety
