@@ -213,6 +213,7 @@ class BTAction(object):
     def timer_callback(self, event):
         self.preempted = True
         rospy.logerr('[' + rospy.get_name() + ']: TIMED OUT!')
+        self.open_left_gripper()
 
         # pull the base back 60 cm
 
@@ -596,7 +597,8 @@ class BTAction(object):
             bookY = 0
             bookZ = 0
             
-        if tp[0][2] - row_height < 0.02:
+        if tp[0][2] - row_height < 0.03:
+            rospy.logerr('object center too low for sideGrasping')
             return False
 
         if abs(objBinRPY[1]) > 0.5:

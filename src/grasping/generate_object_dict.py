@@ -59,7 +59,7 @@ class objDict:
 
         invalidApproachAxis = []
         invalidGraspAxis = []
-        first_years_take_and_toss_straw_cup = objAttr('first_years_take_and_toss_straw_cup', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.15, True, 0)
+        first_years_take_and_toss_straw_cup = objAttr('first_years_take_and_toss_straw_cup', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['first_years_take_and_toss_straw_cup'] = first_years_take_and_toss_straw_cup
 
         invalidApproachAxis = []
@@ -85,11 +85,11 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        laugh_out_loud_joke_book = objAttr('laugh_out_loud_joke_book', invalidApproachAxis, invalidGraspAxis, [0], False, -0.1, True, 0.064)
+        laugh_out_loud_joke_book = objAttr('laugh_out_loud_joke_book', invalidApproachAxis, invalidGraspAxis, [0], True, -0.15, True, 0.064)
         self.dict['laugh_out_loud_joke_book'] = laugh_out_loud_joke_book
 
-        invalidApproachAxis = [2]
-        invalidGraspAxis = [2]
+        invalidApproachAxis = []
+        invalidGraspAxis = []
         mead_index_cards = objAttr('mead_index_cards', invalidApproachAxis, invalidGraspAxis, [1], True, -0.15, True, 0)
         self.dict['mead_index_cards'] = mead_index_cards
 
@@ -103,14 +103,14 @@ class objDict:
         oreo_mega_stuf = objAttr('oreo_mega_stuf', invalidApproachAxis, invalidGraspAxis, [0], True, -0.2, True, 0.11)
         self.dict['oreo_mega_stuf'] = oreo_mega_stuf
 
-        invalidApproachAxis = [0]
-        invalidGraspAxis = [0]
-        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1,0], True, -0.1, True, 0)
+        invalidApproachAxis = []
+        invalidGraspAxis = []
+        paper_mate_12_count_mirado_black_warrior = objAttr('paper_mate_12_count_mirado_black_warrior', invalidApproachAxis, invalidGraspAxis, [1], True, -0.1, True, 0)
         self.dict['paper_mate_12_count_mirado_black_warrior'] = paper_mate_12_count_mirado_black_warrior
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        sharpie_accent_tank_style_highlighters = objAttr('sharpie_accent_tank_style_highlighters', invalidApproachAxis, invalidGraspAxis, [0], False, -0.15, True, 0)
+        sharpie_accent_tank_style_highlighters = objAttr('sharpie_accent_tank_style_highlighters', invalidApproachAxis, invalidGraspAxis, [0], True, -0.15, True, 0)
         self.dict['sharpie_accent_tank_style_highlighters'] = sharpie_accent_tank_style_highlighters
 
         invalidApproachAxis = [2]
@@ -135,7 +135,7 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        feline_greenies_dental_treats = objAttr('feline_greenies_dental_treats', invalidApproachAxis, invalidGraspAxis, [0], True, -0.1, True, 0.075)
+        feline_greenies_dental_treats = objAttr('feline_greenies_dental_treats', invalidApproachAxis, invalidGraspAxis, [1, 0], True, -0.1, True, 0.075)
         self.dict['feline_greenies_dental_treats'] = feline_greenies_dental_treats
 
         invalidApproachAxis = [2]
@@ -150,7 +150,7 @@ class objDict:
 
         invalidApproachAxis = [2]
         invalidGraspAxis = [2]
-        mark_twain_huckleberry_finn = objAttr('mark_twain_huckleberry_finn', invalidApproachAxis, invalidGraspAxis, [0], False, -0.1, True, 0.064)
+        mark_twain_huckleberry_finn = objAttr('mark_twain_huckleberry_finn', invalidApproachAxis, invalidGraspAxis, [0], True, -0.15, True, 0.064)
         self.dict['mark_twain_huckleberry_finn'] = mark_twain_huckleberry_finn
 
         invalidApproachAxis = []
@@ -227,6 +227,9 @@ if __name__ == "__main__":
     dictObj.makeDict()
     dictObj.saveDict()
     dictObj.loadDict()
-    c = dictObj.getEntry('elmers_washable_no_run_school_glue')
-    print c
-    print dictObj.getSize()
+    # c = dictObj.getEntry('elmers_washable_no_run_school_glue')
+    # print c
+    print '******************************************'
+    print 'Number of objects in the dict: %d' % dictObj.getSize()
+    print '******************************************'
+    

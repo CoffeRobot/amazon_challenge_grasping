@@ -12,7 +12,7 @@ grasping_param_dict:
   sideGraspingRow1_liftAngle: -1
   sideGraspingRow1_height: 0.04
   sideGraspingBookX: 0.01
-  sideGraspingBookY: 0.02
+  sideGraspingBookY: 0.025
   sideGraspingBookZ: 0.045
 
   gripperWidth: 0.085
@@ -24,14 +24,14 @@ grasping_param_dict:
   
   topGraspingRoll: 180
   topGrasping_pre_distance: -0.2
-  topGraspHeight: 0.06
+  topGraspHeight: 0.04
   topGraspingFrame: 'base_link'
   topGraspingShakingNumber: 2
   topGraspingReachSeg: 0.04
   topGraspingTouchSteps: 10
   topGraspingTouchTolerance: 0.02
   topGraspingYshiftTolerance: 0.04
-  topGraspingLiftingHeight: 0.04
+  topGraspingLiftingHeight: 0.06
   topGraspingMaxReachingHeight: 0.1
 
   topGraspingYawTolerance: 30
