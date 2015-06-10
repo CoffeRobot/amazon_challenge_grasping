@@ -27,7 +27,7 @@ grasping_param_dict:
   topGraspHeight: 0.04
   topGraspingFrame: 'base_link'
   topGraspingShakingNumber: 2
-  topGraspingReachSeg: 0.04
+  topGraspingReachSeg: 0.06
   topGraspingTouchSteps: 10
   topGraspingTouchTolerance: 0.02
   topGraspingYshiftTolerance: 0.04

@@ -406,7 +406,7 @@ class BTAction(object):
             for j in range(self.topGraspingYawTrials):
                 if self._exit:
                     return False
-                y_shift_step = 0.06 / (self.topGraspingYawTrials - 1.0)
+                y_shift_step = self.topGraspingYshiftTolerance / (self.topGraspingYawTrials - 1.0)
                 reach_Y_shift_step = self.topGraspingYshiftTolerance / (self.topGraspingYawTrials - 1.0)
                 
                 if binFrame[0][1] >= 0.13:
@@ -458,7 +458,7 @@ class BTAction(object):
                 TOUCHING
                 '''
 
-                touching_height = max(tp[0][2], row_height)
+                touching_height = max(tp[0][2]/2., row_height)
                 if self.poseFromSimtrack:
                     touching_pose = kdl.Frame(tool_frame_rotation, kdl.Vector( tp[0][0], tp[0][1] + reach_Y_shift, touching_height))
                 else:
